@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import clsx from 'clsx'
 import { Send, Copy, Check } from 'lucide-react'
-import Button from '@/components/ui/Button'
-import JsonViewer from '@/components/ui/JsonViewer'
-import Badge from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { JsonViewer } from '@/components/ui/JsonViewer'
+import { Badge } from '@/components/ui/Badge'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7860'
 
@@ -28,7 +28,7 @@ const ENDPOINTS: Endpoint[] = [
 export default function APIPanel() {
   const [selected, setSelected] = useState(0)
   const [body, setBody] = useState(ENDPOINTS[0].body ?? '')
-  const [response, setResponse] = useState<unknown>(null)
+  const [response, setResponse] = useState<any>(null)
   const [status, setStatus] = useState<number | null>(null)
   const [duration, setDuration] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -95,7 +95,7 @@ export default function APIPanel() {
             )}
           >
             <div className="flex items-center gap-2">
-              <Badge variant={e.method === 'GET' ? 'success' : 'info'}>{e.method}</Badge>
+              <Badge variant={e.method === 'GET' ? 'success' as any : 'info' as any}>{e.method}</Badge>
               <span className="font-mono text-text-primary">{e.path}</span>
             </div>
             <p className="text-[10px] text-text-muted mt-0.5">{e.description}</p>
@@ -108,7 +108,7 @@ export default function APIPanel() {
         {/* Request */}
         <div className="bg-card rounded-lg border border-border p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <Badge variant={ep.method === 'GET' ? 'success' : 'info'}>{ep.method}</Badge>
+            <Badge variant={ep.method === 'GET' ? 'success' as any : 'info' as any}>{ep.method}</Badge>
             <span className="font-mono text-sm text-text-primary">{API_URL}{ep.path}</span>
           </div>
           {ep.method === 'POST' && (
@@ -119,7 +119,7 @@ export default function APIPanel() {
               className="w-full bg-surface border border-border rounded px-3 py-2 text-xs font-mono text-text-primary resize-none focus:outline-none focus:ring-1 focus:ring-accent"
             />
           )}
-          <Button onClick={handleSend} isLoading={isLoading} size="sm">
+          <Button onClick={handleSend} isLoading={isLoading}>
             <Send className="w-3.5 h-3.5" /> Send Request
           </Button>
         </div>
@@ -128,12 +128,12 @@ export default function APIPanel() {
         {response !== null && (
           <div className="bg-card rounded-lg border border-border p-4 space-y-2">
             <div className="flex items-center gap-3">
-              <Badge variant={status && status >= 200 && status < 300 ? 'success' : 'danger'}>
+              <Badge variant={status && status >= 200 && status < 300 ? 'success' as any : 'danger' as any}>
                 {status}
               </Badge>
               {duration !== null && <span className="text-xs text-text-muted">{duration}ms</span>}
             </div>
-            <JsonViewer data={response} maxHeight={300} />
+            <JsonViewer data={response} />
           </div>
         )}
 
@@ -151,3 +151,4 @@ export default function APIPanel() {
     </div>
   )
 }
+

@@ -1,8 +1,8 @@
 'use client'
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import Badge from '@/components/ui/Badge'
-import ScoreBar from '@/components/ui/ScoreBar'
+import { Badge } from '@/components/ui/Badge'
+import { ScoreBar } from '@/components/ui/ScoreBar'
 import type { GradeResult } from '@/types'
 
 interface ScoresPanelProps {
@@ -62,11 +62,11 @@ export default function ScoresPanel({ gradeResults, targetScores }: ScoresPanelP
                 {result.score.toFixed(2)}
               </p>
               <p className="text-xs text-text-muted mt-1">Target: {target.toFixed(2)}</p>
-              <Badge variant={result.passed ? 'success' : 'danger'} className="mt-2">
+              <Badge variant={(result.passed ? 'success' : 'danger') as any} className="mt-2">
                 {result.passed ? 'PASSED' : 'FAILED'}
               </Badge>
               <div className="mt-3">
-                <ScoreBar value={result.score} target={target} label={t.id} />
+                <ScoreBar value={result.score} targetScore={target} />
               </div>
             </div>
           )

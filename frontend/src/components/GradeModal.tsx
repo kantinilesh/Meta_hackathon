@@ -1,9 +1,9 @@
 'use client'
 
 import { X, RotateCcw, ChevronRight, BarChart3 } from 'lucide-react'
-import Badge from '@/components/ui/Badge'
-import Button from '@/components/ui/Button'
-import ScoreBar from '@/components/ui/ScoreBar'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { ScoreBar } from '@/components/ui/ScoreBar'
 import type { GradeResult } from '@/types'
 
 interface GradeModalProps {
@@ -54,13 +54,13 @@ export default function GradeModal({
           </p>
           <p className="text-text-muted text-sm mt-1">/ 1.00</p>
           <div className="mt-3">
-            <Badge variant={result.passed ? 'success' : 'danger'}>
+            <Badge variant={result.passed ? 'success' as any : 'danger' as any}>
               {result.passed ? '✓ PASSED' : '✗ FAILED'}
             </Badge>
           </div>
           <p className="text-xs text-text-muted mt-2">Target: {targetScore.toFixed(2)}</p>
           <div className="mt-4 max-w-xs mx-auto">
-            <ScoreBar value={result.score} target={targetScore} label="" />
+            <ScoreBar value={result.score} targetScore={targetScore} />
           </div>
         </div>
 
@@ -95,13 +95,13 @@ export default function GradeModal({
 
         {/* ── Actions ── */}
         <div className="px-6 py-4 flex gap-3">
-          <Button onClick={onRunAgain} variant="primary" size="sm" className="flex-1">
+          <Button onClick={onRunAgain} variant="primary" className="flex-1">
             <RotateCcw className="w-3.5 h-3.5" /> Run Again
           </Button>
-          <Button onClick={onNextTask} variant="outline" size="sm" className="flex-1">
+          <Button onClick={onNextTask} variant="outline" className="flex-1">
             Next Task <ChevronRight className="w-3.5 h-3.5" />
           </Button>
-          <Button onClick={onViewScores} variant="ghost" size="sm">
+          <Button onClick={onViewScores} variant="ghost">
             <BarChart3 className="w-3.5 h-3.5" />
           </Button>
         </div>

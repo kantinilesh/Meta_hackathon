@@ -10,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
-import ScoreBar from '@/components/ui/ScoreBar'
+import { ScoreBar } from '@/components/ui/ScoreBar'
 
 interface TaskScore {
   taskId: string
@@ -61,8 +61,7 @@ export default function ScoresDashboard({ scores }: ScoresDashboardProps) {
             </p>
             <ScoreBar
               value={s.score}
-              target={s.targetScore}
-              label={`Target: ${(s.targetScore * 100).toFixed(0)}%`}
+              targetScore={s.targetScore}
             />
           </div>
         ))}

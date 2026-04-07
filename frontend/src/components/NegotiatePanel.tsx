@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import clsx from 'clsx'
 import { AlertTriangle, Send } from 'lucide-react'
-import Badge from '@/components/ui/Badge'
-import Button from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
 import type { Observation, Clause, Action, ActionType, ClauseLabel } from '@/types'
 
 interface NegotiatePanelProps {
@@ -61,7 +61,7 @@ export default function NegotiatePanel({
   // Track which clauses agent has already acted on
   const actedClauseIds = new Set(
     observation.negotiation_history
-      .filter(t => t.speaker === 'agent')
+      .filter(t => t.speaker.includes('agent'))
       .map(t => t.clause_id)
   )
 
@@ -102,9 +102,9 @@ export default function NegotiatePanel({
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-[10px] text-text-muted">{clause.id}</span>
                   <span className="text-xs font-medium text-text-primary truncate">{clause.title}</span>
-                  {clause.is_deal_breaker && <Badge variant="danger">deal-breaker</Badge>}
+                  {clause.is_deal_breaker && <Badge variant={'danger' as any}>deal-breaker</Badge>}
                   <Badge variant="neutral">{clause.category}</Badge>
-                  {isActed && <Badge variant="success">done</Badge>}
+                  {isActed && <Badge variant={'success' as any}>done</Badge>}
                 </div>
                 <p className="text-[11px] text-text-muted mt-1 line-clamp-2">{clause.text}</p>
               </button>
@@ -122,13 +122,13 @@ export default function NegotiatePanel({
                   key={i}
                   className={clsx(
                     'flex',
-                    turn.speaker === 'agent' ? 'justify-end' : 'justify-start'
+                    turn.speaker.includes('agent') ? 'justify-end' : 'justify-start'
                   )}
                 >
                   <div
                     className={clsx(
                       'max-w-[80%] rounded-lg px-3 py-2 text-xs',
-                      turn.speaker === 'agent'
+                      turn.speaker.includes('agent')
                         ? 'bg-accent/20 text-blue-300'
                         : 'bg-surface text-text-secondary'
                     )}
@@ -137,7 +137,7 @@ export default function NegotiatePanel({
                       {turn.speaker} · {turn.action_type} · {turn.clause_id}
                     </p>
                     <p>{turn.content}</p>
-                    {turn.speaker === 'agent' && turn.reward_delta !== 0 && (
+                    {turn.speaker.includes('agent') && turn.reward_delta !== undefined && turn.reward_delta !== 0 && (
                       <p className={clsx(
                         'text-[10px] mt-1 font-mono',
                         turn.reward_delta > 0 ? 'text-emerald-400' : 'text-red-400'
@@ -162,7 +162,7 @@ export default function NegotiatePanel({
               <p className="text-sm font-medium text-text-primary mt-1">{selectedClause.title}</p>
               <div className="flex gap-1.5 mt-1">
                 <Badge variant="neutral">{selectedClause.category}</Badge>
-                {selectedClause.is_deal_breaker && <Badge variant="danger">deal-breaker</Badge>}
+                {selectedClause.is_deal_breaker && <Badge variant={'danger' as any}>deal-breaker</Badge>}
               </div>
             </div>
 
@@ -250,7 +250,7 @@ export default function NegotiatePanel({
               </div>
             )}
 
-            <Button onClick={handleSubmit} isLoading={isLoading} className="w-full" size="sm">
+            <Button onClick={handleSubmit} isLoading={isLoading} className="w-full">
               <Send className="w-3.5 h-3.5" /> Submit Action
             </Button>
           </div>

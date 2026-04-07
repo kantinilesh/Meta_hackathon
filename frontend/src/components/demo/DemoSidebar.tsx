@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { TaskConfig } from '@/types'
-import Badge from '@/components/ui/Badge'
+import { Badge } from '@/components/ui/Badge'
 
 interface DemoSidebarProps {
   tasks: TaskConfig[]

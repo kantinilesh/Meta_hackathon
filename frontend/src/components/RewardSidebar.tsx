@@ -1,7 +1,7 @@
 'use client'
 
 import clsx from 'clsx'
-import ScoreBar from '@/components/ui/ScoreBar'
+import { ScoreBar } from '@/components/ui/ScoreBar'
 import type { EpisodeState, Observation } from '@/types'
 
 interface RewardSidebarProps {
@@ -10,7 +10,10 @@ interface RewardSidebarProps {
 }
 
 export default function RewardSidebar({ episodeState, targetScore }: RewardSidebarProps) {
-  const { observation, lastReward, totalReward, steps } = episodeState
+  const { observation, reward } = episodeState
+  const lastReward = reward
+  const totalReward = reward?.value || 0
+  const steps = observation?.turn || 0
 
   return (
     <aside className="w-72 flex-shrink-0 bg-primary border-l border-border h-screen overflow-y-auto">
@@ -34,7 +37,7 @@ export default function RewardSidebar({ episodeState, targetScore }: RewardSideb
       {/* ── Score Meters ── */}
       <div className="p-4 space-y-3 border-b border-border">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Score</p>
-        <ScoreBar value={totalReward} target={targetScore} label="Current" />
+        <ScoreBar value={totalReward} targetScore={targetScore} />
       </div>
 
       {/* ── Last Reward Breakdown ── */}
@@ -70,10 +73,10 @@ export default function RewardSidebar({ episodeState, targetScore }: RewardSideb
           <p className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Clauses</p>
           {observation.clauses.map(clause => {
             const acted = observation.negotiation_history.some(
-              t => t.speaker === 'agent' && t.clause_id === clause.id
+              t => t.speaker.includes('agent') && t.clause_id === clause.id
             )
             const cpAccepted = observation.negotiation_history.some(
-              t => t.speaker === 'counterparty' && t.clause_id === clause.id && t.action_type === 'accept'
+              t => !t.speaker.includes('agent') && t.speaker !== 'system' && t.clause_id === clause.id && t.action_type === 'accept'
             )
 
             let dotColor = 'bg-slate-500'          // pending

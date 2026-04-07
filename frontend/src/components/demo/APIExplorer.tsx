@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { api } from '@/lib/api'
-import JsonViewer from '@/components/ui/JsonViewer'
+import { JsonViewer } from '@/components/ui/JsonViewer'
 import { Play, ChevronRight } from 'lucide-react'
 
 const ENDPOINTS = [

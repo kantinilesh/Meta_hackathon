@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: contractenv-api
+    env: docker
+    dockerfilePath: backend.Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 7860
+      - key: OPENAI_API_KEY
+        sync: false

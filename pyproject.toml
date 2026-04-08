@@ -1,0 +1,9 @@
+[project]
+name = "contractenv"
+version = "0.1.0"
+description = "Contract Environment for OpenEnv Hackathon"
+requires-python = ">=3.11"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.backends.legacy:build"

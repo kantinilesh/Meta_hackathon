@@ -2,6 +2,7 @@ import os
 import json
 import time
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -85,31 +86,51 @@ class ContractAgent:
         )
 
 def main():
-    if not os.getenv("API_BASE_URL") or not os.getenv("MODEL_NAME") or not os.getenv("HF_TOKEN"):
-        print("Missing required env vars: API_BASE_URL, MODEL_NAME, HF_TOKEN")
+    if not os.getenv("API_BASE_URL") or not os.getenv("MODEL_NAME"):
+        print("Missing required env vars: API_BASE_URL, MODEL_NAME")
         return
 
     openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "dummy"), base_url=os.getenv("API_BASE_URL"))
     agent = ContractAgent("http://localhost:7860", openai_client)
     
-    results = {}
+    task_results = []
     total_time = 0.0
+    total_score = 0.0
     for task_id in ["task1", "task2", "task3"]:
-        print(f"Running {task_id}...")
+        print(f"[START] task={task_id}", flush=True)
         res = agent.run_episode(task_id)
-        results[task_id] = {
+        task_results.append({
+            "task_id": task_id,
             "score": res.score,
             "passed": res.passed,
             "steps": res.steps,
-            "duration": res.duration_seconds
-        }
+            "duration_seconds": res.duration_seconds,
+        })
         total_time += res.duration_seconds
-        print(f"Result: Score {res.score:.2f} | Passed: {res.passed} | Run time: {res.duration_seconds:.2f}s")
-        
+        total_score += res.score
+        print(
+            f"[STEP] step={res.steps} reward={res.total_reward:.4f}",
+            flush=True,
+        )
+        print(
+            f"[END] task={task_id} score={res.score:.4f} steps={res.steps} passed={str(res.passed).lower()} duration={res.duration_seconds:.4f}",
+            flush=True,
+        )
+
+    results = {
+        "environment": "contract-env",
+        "version": "1.0.0",
+        "model": os.getenv("MODEL_NAME"),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "tasks": task_results,
+        "average_score": total_score / len(task_results) if task_results else 0.0,
+        "total_duration_seconds": total_time,
+    }
+
     with open("results.json", "w") as f:
         json.dump(results, f, indent=2)
         
-    print(f"Total Inference Time: {total_time:.2f}s (< 1200s required)")
+    print(f"Total Inference Time: {total_time:.2f}s (< 1200s required)", flush=True)
 
 if __name__ == "__main__":
     main()

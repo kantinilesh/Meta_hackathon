@@ -38,11 +38,12 @@ def health():
     return {"status": "ok", "version": "1.0.0", "timestamp": time.time(), "active_sessions": len(negotiation_sessions)}
 
 class ResetReq(BaseModel):
-    task_id: str
+    task_id: str = "task1"
     session_id: Optional[str] = None
 
 @app.post("/reset")
-def reset(req: ResetReq):
+def reset(req: Optional[ResetReq] = None):
+    req = req or ResetReq()
     session_id = req.session_id or str(uuid.uuid4())
     env = ContractEnv(task_id=req.task_id)
     obs = env.reset()

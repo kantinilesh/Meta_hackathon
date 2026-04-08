@@ -38,12 +38,11 @@ def health():
     return {"status": "ok", "version": "1.0.0", "timestamp": time.time(), "active_sessions": len(negotiation_sessions)}
 
 class ResetReq(BaseModel):
-    task_id: str
+    task_id: str = "task1"
     session_id: Optional[str] = None
 
 @app.post("/reset")
 def reset(req: Optional[ResetReq] = Body(default=None)):
-    # Some validators probe POST /reset with an empty body, so fall back to task1.
     task_id = req.task_id if req and req.task_id else "task1"
     session_id = req.session_id if req and req.session_id else str(uuid.uuid4())
     env = ContractEnv(task_id=task_id)
@@ -152,16 +151,27 @@ def grade(req: GradeReq):
     env = env_sessions.get(req.session_id)
     if not env:
         raise HTTPException(404, "Session not found")
-    
-    score = sum(t.reward_delta for t in env.history if getattr(t, 'reward_delta', None)) if env.history else 0
-    passed = score > 0
+
+    score = sum(t.reward_delta for t in env.history if getattr(t, "reward_delta", None)) if env.history else 0.0
+
+    if req.task_id == "task3":
+        total_clauses = len(env.clauses) or 1
+        agreed_clauses = sum(1 for clause in env.clauses.values() if clause.status == "agreed")
+        score = max(score, agreed_clauses / total_clauses)
+        passed = agreed_clauses == total_clauses
+        details = [
+            f"Negotiation reached agreement on {agreed_clauses}/{total_clauses} clauses."
+        ]
+    else:
+        passed = score > 0
+        details = ["Grading complete based on accumulated reward."]
     
     return {
         "task_id": req.task_id, 
         "score": score, 
         "breakdown": {}, 
         "passed": passed, 
-        "details": ["Grading complete based on accumulated reward."]
+        "details": details
     }
 
 class SessionStartReq(BaseModel):

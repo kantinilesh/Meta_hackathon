@@ -114,6 +114,17 @@ class ContractEnv:
                 elif cp_resp.response_type == "deal_breaker_reject":
                     reward_breakdown.break_counterparty_deal_breaker = -0.30
 
+                # Persist the proposal outcome so grading can recover task progress later.
+                self.history.append(NegotiationTurn(
+                    turn_number=self.turn,
+                    speaker="system",
+                    action_type=action.action_type,
+                    clause_id=action.clause_id,
+                    content="Negotiation proposal evaluated.",
+                    proposed_text=action.proposed_text,
+                    reward_delta=sum(reward_breakdown.model_dump().values())
+                ))
+
                 # Counterparty turn
                 self.history.append(NegotiationTurn(
                     turn_number=self.turn,

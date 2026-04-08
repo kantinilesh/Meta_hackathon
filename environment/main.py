@@ -146,24 +146,41 @@ class GradeReq(BaseModel):
     session_id: str
     task_id: str
 
+
+def _strict_unit_interval(value: float) -> float:
+    return max(0.01, min(0.99, value))
+
+
 @app.post("/grade")
 def grade(req: GradeReq):
     env = env_sessions.get(req.session_id)
     if not env:
         raise HTTPException(404, "Session not found")
 
-    score = sum(t.reward_delta for t in env.history if getattr(t, "reward_delta", None)) if env.history else 0.0
+    raw_score = sum(t.reward_delta for t in env.history if getattr(t, "reward_delta", None)) if env.history else 0.0
 
     if req.task_id == "task3":
         total_clauses = len(env.clauses) or 1
         agreed_clauses = sum(1 for clause in env.clauses.values() if clause.status == "agreed")
-        score = max(score, agreed_clauses / total_clauses)
+        score = _strict_unit_interval(max(raw_score, agreed_clauses / total_clauses))
         passed = agreed_clauses == total_clauses
         details = [
             f"Negotiation reached agreement on {agreed_clauses}/{total_clauses} clauses."
         ]
+    elif req.task_id == "task2":
+        max_task_score = max(0.28 * len(env.clauses), 0.28)
+        score = _strict_unit_interval(raw_score / max_task_score)
+        passed = raw_score > 0
+        details = ["Redlining quality normalized against the task's clause budget."]
+    elif req.task_id == "task1":
+        unfair_clause_count = sum(1 for clause in env.clauses.values() if clause.ground_truth_label == "unfair") or 1
+        max_task_score = 0.15 * unfair_clause_count
+        score = _strict_unit_interval(raw_score / max_task_score)
+        passed = raw_score > 0
+        details = ["Clause-labeling score normalized against the number of unfair clauses."]
     else:
-        passed = score > 0
+        score = _strict_unit_interval(raw_score)
+        passed = raw_score > 0
         details = ["Grading complete based on accumulated reward."]
     
     return {

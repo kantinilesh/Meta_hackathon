@@ -7,6 +7,7 @@ from typing import Callable
 
 import httpx
 from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv()
 
@@ -37,6 +38,11 @@ class EpisodeResult:
 class ContractAgent:
     def __init__(self, env_base_url: str):
         self.http = httpx.Client(base_url=env_base_url, timeout=30.0)
+        self.model = os.getenv("MODEL_NAME", "gpt-4o-mini")
+        self.llm = OpenAI(
+            api_key=os.environ["API_KEY"],
+            base_url=os.environ["API_BASE_URL"],
+        )
 
     def reset_episode(self, task_id: str) -> tuple[dict, str]:
         resp = self.http.post("/reset", json={"task_id": task_id})
@@ -46,6 +52,50 @@ class ContractAgent:
 
     def decide_action(self, observation: dict, task_id: str, step_index: int) -> dict:
         clauses = observation.get("clauses", [])
+        if not clauses:
+            return {"clause_id": "c1", "action_type": "skip"}
+
+        fallback_action = self._fallback_action(clauses, task_id, step_index)
+        target_clause_id = fallback_action["clause_id"]
+        clause = next((item for item in clauses if item["id"] == target_clause_id), clauses[0])
+
+        system_prompt = (
+            "You are an agent acting inside a contract negotiation environment. "
+            "Return only valid JSON for one action. Keep proposals concrete, fair, and concise."
+        )
+        user_prompt = json.dumps(
+            {
+                "task_id": task_id,
+                "step_index": step_index,
+                "target_clause": clause,
+                "fallback_action": fallback_action,
+                "rules": {
+                    "task1": "Return action_type=flag with label fair, unfair, or neutral plus a short reason.",
+                    "task2": "Return action_type=propose with an improved clause text.",
+                    "task3": "Return action_type=propose with negotiation wording likely to be accepted.",
+                },
+            }
+        )
+
+        try:
+            response = self.llm.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.2,
+            )
+            parsed = json.loads(response.choices[0].message.content)
+            if parsed.get("clause_id") and parsed.get("action_type"):
+                return parsed
+        except Exception:
+            pass
+
+        return fallback_action
+
+    def _fallback_action(self, clauses: list[dict], task_id: str, step_index: int) -> dict:
         if not clauses:
             return {"clause_id": "c1", "action_type": "skip"}
 

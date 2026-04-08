@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -42,9 +42,11 @@ class ResetReq(BaseModel):
     session_id: Optional[str] = None
 
 @app.post("/reset")
-def reset(req: ResetReq):
-    session_id = req.session_id or str(uuid.uuid4())
-    env = ContractEnv(task_id=req.task_id)
+def reset(req: Optional[ResetReq] = Body(default=None)):
+    # Some validators probe POST /reset with an empty body, so fall back to task1.
+    task_id = req.task_id if req and req.task_id else "task1"
+    session_id = req.session_id if req and req.session_id else str(uuid.uuid4())
+    env = ContractEnv(task_id=task_id)
     obs = env.reset()
     env_sessions[session_id] = env
     return {"observation": obs.model_dump(), "session_id": session_id}

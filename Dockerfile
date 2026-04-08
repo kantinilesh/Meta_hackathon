@@ -1,20 +1,42 @@
+FROM node:18-alpine AS frontend-builder
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+# Bake in the /api dynamic base URL so the frontend knows to call our Nginx endpoints
+ENV NEXT_PUBLIC_API_URL=/api
+RUN npm run build
+
 FROM python:3.11-slim
 WORKDIR /app
-RUN apt-get update && apt-get install -y build-essential curl nodejs npm && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js, Nginx, and process dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    nginx \
+    nodejs \
+    npm \
+    && rm -rf /var/lib/apt/lists/*
+
+# Setup backend Python environment
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-RUN python -m spacy download en_core_web_sm || true
-
 COPY . .
 
-# Build frontend
-WORKDIR /app/frontend
-# Ensure package.json exists before npm ci/install
-RUN npm install
-RUN npm run build
-WORKDIR /app
+# Copy built frontend from previous stage
+COPY --from=frontend-builder /app/frontend /app/frontend
 
-ENV PYTHONPATH=/app PORT=7860 PYTHONUNBUFFERED=1
+# Setup Nginx
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Add start script
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
+# Environment config
+ENV PORT=7860
+ENV NODE_ENV=production
 EXPOSE 7860
-HEALTHCHECK --interval=30s --timeout=10s CMD curl -f http://localhost:7860/health || exit 1
-CMD ["uvicorn","environment.main:app","--host","0.0.0.0","--port","7860","--workers","1"]
+
+# Start supervisor / bash script mapping
+CMD ["/start.sh"]

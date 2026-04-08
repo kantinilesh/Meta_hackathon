@@ -6,6 +6,7 @@
 
 # ── .env / Secrets ───────────────────────────────────────────────────
 .env
+frontend/.next/
 .env.local
 .env.production
 .env.staging
@@ -84,3 +85,4 @@ Desktop.ini
 *.tmp
 *.temp
 .ipynb_checkpoints/
+.vercel

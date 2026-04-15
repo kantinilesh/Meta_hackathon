@@ -1,16 +1,18 @@
-from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-import asyncio, uuid, os, secrets, logging, time
+import asyncio, uuid, os, secrets, logging, time, json, re
 from typing import Dict, List, Optional
 from openai import AsyncOpenAI
 import httpx
+from pathlib import Path
 
 from .models import (
     NegotiationSession, PartyConfig, SessionStatus, Observation, 
-    Action, Reward, TaskConfig, GradeResult, NegotiationTurn, NegotiationRole
+    Action, Reward, TaskConfig, GradeResult, NegotiationTurn, NegotiationRole,
+    CompanyDocument
 )
 from .env import ContractEnv
 from .dual_env import DualAgentEnv
@@ -20,9 +22,13 @@ from .contracts.nda_template import TASK_CONTRACTS, load_contract
 app = FastAPI(title="ContractEnv", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
+UPLOAD_DIR = Path(os.path.join(os.path.dirname(__file__), "..", "uploads"))
+UPLOAD_DIR.mkdir(exist_ok=True)
+
 env_sessions: Dict[str, ContractEnv] = {}
 negotiation_sessions: Dict[str, NegotiationSession] = {}
 ws_connections: Dict[str, List[WebSocket]] = {}
+session_documents: Dict[str, List[CompanyDocument]] = {}
 
 import os
 from dotenv import load_dotenv
@@ -36,6 +42,138 @@ except:
 @app.get("/health")
 def health():
     return {"status": "ok", "version": "1.0.0", "timestamp": time.time(), "active_sessions": len(negotiation_sessions)}
+
+class UploadDocumentReq(BaseModel):
+    session_id: str
+    document_type: str
+    extract_terms: bool = True
+
+ALLOWED_EXTENSIONS = {".pdf", ".docx", ".txt", ".xlsx"}
+TEXT_EXTENSIONS = {".txt", ".docx"}
+
+async def _extract_text_from_file(file_path: Path) -> str:
+    ext = file_path.suffix.lower()
+    content = ""
+    try:
+        if ext == ".txt":
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+        elif ext == ".docx":
+            from docx import Document
+            doc = Document(file_path)
+            content = "\n".join([p.text for p in doc.paragraphs])
+        elif ext == ".pdf":
+            import PyPDF2
+            with open(file_path, "rb") as f:
+                reader = PyPDF2.PdfReader(f)
+                for page in reader.pages:
+                    content += page.extract_text() or ""
+    except Exception as e:
+        logging.warning(f"Failed to extract text from {file_path}: {e}")
+    return content[:15000]
+
+async def _extract_key_terms(text: str, doc_type: str) -> List[str]:
+    if not openai_client:
+        return []
+    term_prompts = {
+        "financials": "Extract 5-10 key financial metrics and figures (revenue, profit, liabilities, assets, valuation) from this document.",
+        "bylaws": "Extract 5-10 key governance terms (board size, voting rights, decision thresholds) from this document.",
+        "due_diligence": "Extract 5-10 key findings about the target company from this due diligence report.",
+        "cap_table": "Extract 5-10 key equity terms (shareholders, ownership percentages, vesting schedules) from this cap table.",
+        "employment": "Extract 5-10 key employment terms from this document.",
+        "ip_assignment": "Extract 5-10 key IP assignment terms from this document.",
+        "other": "Extract 5-10 key terms relevant to M&A negotiation from this document."
+    }
+    prompt = term_prompts.get(doc_type, term_prompts["other"]) + f"\n\nDocument:\n{text[:8000]}"
+    try:
+        resp = await openai_client.chat.completions.create(
+            model=os.getenv("MODEL_NAME", "gpt-4o-mini"),
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=500
+        )
+        result = resp.choices[0].message.content
+        terms = [t.strip() for t in re.findall(r"[\d\.\$%]+|[A-Z][A-Za-z\s]{3,30}", result)][:10]
+        return terms
+    except Exception as e:
+        logging.warning(f"Failed to extract terms: {e}")
+        return []
+
+async def _summarize_document(text: str, doc_type: str) -> str:
+    if not openai_client:
+        return text[:500]
+    summary_prompts = {
+        "financials": "Summarize the key financial position in 3-5 sentences: total revenue, profitability, key liabilities, and any notable financial events.",
+        "bylaws": "Summarize the key governance structure in 3-5 sentences: board composition, voting procedures, and decision-making thresholds.",
+        "due_diligence": "Summarize the key findings in 3-5 sentences: company strengths, risks identified, and any deal-breakers.",
+        "cap_table": "Summarize the equity structure in 3-5 sentences: major shareholders, ownership percentages, and any vesting conditions.",
+        "employment": "Summarize key employment terms in 3-5 sentences: key personnel, contracts, and any golden parachute clauses.",
+        "ip_assignment": "Summarize IP ownership in 3-5 sentences: what IP is being assigned, any third-party claims, and exclusivity terms.",
+        "other": "Summarize the key contents of this document in 3-5 sentences for M&A negotiation purposes."
+    }
+    prompt = summary_prompts.get(doc_type, summary_prompts["other"]) + f"\n\nDocument:\n{text[:8000]}"
+    try:
+        resp = await openai_client.chat.completions.create(
+            model=os.getenv("MODEL_NAME", "gpt-4o-mini"),
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=300
+        )
+        return resp.choices[0].message.content
+    except Exception as e:
+        logging.warning(f"Failed to summarize: {e}")
+        return text[:200]
+
+@app.post("/document/upload")
+async def upload_document(
+    file: UploadFile = File(...),
+    session_id: str = "",
+    document_type: str = "other",
+    extract_terms: bool = True
+):
+    file_ext = Path(file.filename).suffix.lower()
+    if file_ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(400, f"File type not allowed. Allowed: {list(ALLOWED_EXTENSIONS)}")
+    
+    doc_id = str(uuid.uuid4())
+    file_path = UPLOAD_DIR / f"{doc_id}{file_ext}"
+    
+    content = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(content)
+    
+    text_content = ""
+    if file_ext in TEXT_EXTENSIONS:
+        text_content = await _extract_text_from_file(file_path)
+    
+    summary = await _summarize_document(text_content, document_type) if text_content else ""
+    key_terms = await _extract_key_terms(text_content, document_type) if extract_terms and text_content else []
+    
+    doc = CompanyDocument(
+        document_id=doc_id,
+        file_name=file.filename,
+        file_type=file_ext[1:],
+        document_type=document_type,
+        summary=summary,
+        key_terms=key_terms,
+        upload_date=str(time.time())
+    )
+    
+    if session_id:
+        if session_id not in session_documents:
+            session_documents[session_id] = []
+        session_documents[session_id].append(doc)
+    
+    return {
+        "document_id": doc_id,
+        "file_name": file.filename,
+        "document_type": document_type,
+        "summary": summary,
+        "key_terms": key_terms,
+        "upload_date": doc.upload_date
+    }
+
+@app.get("/session/documents")
+def get_session_documents(session_id: str):
+    return {"documents": session_documents.get(session_id, [])}
 
 class ResetReq(BaseModel):
     task_id: str = "task1"
@@ -190,6 +328,26 @@ def grade(req: GradeReq):
         "passed": passed, 
         "details": details
     }
+
+class LinkDocumentReq(BaseModel):
+    session_id: str
+    role: str
+    document_ids: List[str]
+
+@app.post("/session/link-documents")
+def link_documents(req: LinkDocumentReq):
+    if req.session_id not in session_documents:
+        raise HTTPException(404, "No documents found for session")
+    
+    docs = session_documents[req.session_id]
+    if req.session_id in negotiation_sessions:
+        session = negotiation_sessions[req.session_id]
+        if req.role == "seller" and session.seller_config:
+            session.seller_config.documents = docs
+        elif req.role == "client" and session.client_config:
+            session.client_config.documents = docs
+    
+    return {"linked": len(docs), "documents": [d.model_dump() for d in docs]}
 
 class SessionStartReq(BaseModel):
     session_id: str

@@ -9,6 +9,11 @@ const client = axios.create({
   headers: { 'Content-Type': 'application/json' } 
 })
 
+const multipartClient = axios.create({
+  baseURL: BASE_URL,
+  timeout: 60000,
+})
+
 export const api = {
   health: () => client.get('/health'),
   reset: (taskId: string, sessionId?: string) => client.post('/reset', { task_id: taskId, session_id: sessionId }),
@@ -16,6 +21,21 @@ export const api = {
   state: (sessionId: string) => client.get('/state', { params: { session_id: sessionId } }),
   tasks: () => client.get('/tasks'),
   grade: (sessionId: string, taskId: string) => client.post('/grade', { session_id: sessionId, task_id: taskId }),
+  document: {
+    upload: async (file: File, sessionId: string, documentType: string, extractTerms: boolean = true) => {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('session_id', sessionId)
+      formData.append('document_type', documentType)
+      formData.append('extract_terms', String(extractTerms))
+      return multipartClient.post('/document/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+    },
+    list: (sessionId: string) => client.get('/session/documents', { params: { session_id: sessionId } }),
+    link: (sessionId: string, role: string, documentIds: string[]) => 
+      client.post('/session/link-documents', { session_id: sessionId, role, document_ids: documentIds }),
+  },
   session: {
     create: (data: any) => client.post('/session/create', data),
     join: (data: any) => client.post('/session/join', data),

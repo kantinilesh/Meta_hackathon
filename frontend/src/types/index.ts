@@ -3,6 +3,17 @@ export type ClauseLabel = 'fair' | 'unfair' | 'neutral'
 export type ActionType = 'flag' | 'propose' | 'accept' | 'reject' | 'skip' | 'counter'
 export type NegotiationRole = 'seller' | 'client'
 export type SessionStatus = 'waiting_seller' | 'waiting_client' | 'ready' | 'negotiating' | 'completed' | 'failed'
+export type DocumentType = 'financials' | 'bylaws' | 'due_diligence' | 'cap_table' | 'employment' | 'ip_assignment' | 'other'
+
+export interface CompanyDocument {
+  document_id: string
+  file_name: string
+  file_type: 'pdf' | 'docx' | 'txt' | 'xlsx'
+  document_type: DocumentType
+  summary: string
+  key_terms: string[]
+  upload_date: string
+}
 
 export interface PrivateConstraint {
   constraint_id: string
@@ -21,6 +32,7 @@ export interface PartyConfig {
   agent_style: 'aggressive' | 'balanced' | 'cooperative'
   constraint_summary?: string
   company_context?: string
+  documents?: CompanyDocument[]
 }
 
 export interface SessionCreateReq {

@@ -8,10 +8,11 @@ import { ProgressSteps } from '@/components/ui/ProgressSteps'
 import { Button } from '@/components/ui/Button'
 import { ConstraintBuilder } from '@/components/negotiation/ConstraintBuilder'
 import { ConstraintList } from '@/components/negotiation/ConstraintList'
+import { DocumentUploader } from '@/components/negotiation/DocumentUploader'
 import { InviteCard } from '@/components/session/InviteCard'
 import { WaitingRoom } from '@/components/session/WaitingRoom'
 import { api } from '@/lib/api'
-import { PrivateConstraint } from '@/types'
+import { PrivateConstraint, CompanyDocument } from '@/types'
 import { Check } from 'lucide-react'
 
 export default function NegotiateSetup() {
@@ -23,6 +24,7 @@ export default function NegotiateSetup() {
   const [companyContext, setCompanyContext] = useState('')
   const [constraints, setConstraints] = useState<PrivateConstraint[]>([])
   const [agentStyle, setAgentStyle] = useState<'balanced'|'aggressive'|'cooperative'>('balanced')
+  const [documents, setDocuments] = useState<CompanyDocument[]>([])
   
   const [sessionInfo, setSessionInfo] = useState<any>(null)
   const [loading, setLoading] = useState(false)
@@ -47,6 +49,16 @@ export default function NegotiateSetup() {
       console.error(e)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleLinkDocuments = async () => {
+    if (documents.length > 0 && sessionInfo?.session_id) {
+      try {
+        await api.document.link(sessionInfo.session_id, 'seller', documents.map(d => d.document_id))
+      } catch(e) {
+        console.error('Failed to link documents:', e)
+      }
     }
   }
 
@@ -115,14 +127,29 @@ export default function NegotiateSetup() {
           <div className="bg-white border border-pink-200 rounded-2xl p-8 shadow-sm">
             <div className="mb-6">
               <h2 className="font-display font-bold text-2xl text-charcoal flex items-center gap-2">
-                Your Private Rules
+                Your Private Rules & Documents
               </h2>
               <p className="text-pink-500 text-sm italic font-medium mt-2">
-                These are never shown to the other party. Your AI agent knows them and negotiates from them.
+                These are never shown to the other party. Your AI agent uses them to negotiate.
               </p>
             </div>
             
-            <ConstraintBuilder onAdd={c => setConstraints([...constraints, c])} />
+            <div className="mb-8">
+              <h3 className="font-semibold text-slate mb-4">Prerequisite Documents (Optional)</h3>
+              <p className="text-sm text-slate mb-4">
+                Upload financials, bylaws, due diligence reports, cap tables, etc. The AI will use these to inform negotiations on amount, payment, equity distribution, and other deal terms.
+              </p>
+              <DocumentUploader 
+                sessionId={sessionInfo?.session_id || ''}
+                documents={documents}
+                onDocumentsChange={setDocuments}
+              />
+            </div>
+
+            <div className="border-t border-pink-100 pt-8">
+              <h3 className="font-semibold text-slate mb-4">Private Constraints</h3>
+              <ConstraintBuilder onAdd={c => setConstraints([...constraints, c])} />
+            </div>
             
             <div className="mt-8 border-t border-pink-100 pt-8">
               <h3 className="font-semibold text-slate mb-4">Your Added Constraints</h3>
@@ -152,6 +179,22 @@ export default function NegotiateSetup() {
 
         {step === 2 && sessionInfo && (
           <div className="space-y-8">
+            <div className="bg-white border border-pink-200 rounded-2xl p-8 shadow-sm">
+              <h2 className="font-display font-bold text-2xl mb-6 text-charcoal">Upload Documents</h2>
+              <p className="text-slate mb-6">
+                Optionally upload prerequisite documents now. These will be used by both parties during negotiation.
+              </p>
+              <DocumentUploader 
+                sessionId={sessionInfo.session_id}
+                documents={documents}
+                onDocumentsChange={setDocuments}
+              />
+              <div className="mt-6 flex justify-end">
+                <Button onClick={handleLinkDocuments}>
+                  Save Documents &rarr;
+                </Button>
+              </div>
+            </div>
             <InviteCard inviteUrl={sessionInfo.invite_url} />
             <WaitingRoom sessionId={sessionInfo.session_id} onReady={() => setStep(3)} />
           </div>

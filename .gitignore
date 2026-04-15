@@ -6,6 +6,7 @@
 
 # ── .env / Secrets ───────────────────────────────────────────────────
 .env
+frontend/bin/
 frontend/.next/
 .env.local
 .env.production

@@ -42,6 +42,15 @@ class PrivateConstraint(BaseModel):
     rule_value: Optional[str] = Field(default=None, description="Value for the rule")
     priority: int = Field(default=1, description="Priority weight 1-10")
 
+class CompanyDocument(BaseModel):
+    document_id: str = Field(description="Unique document ID")
+    file_name: str = Field(description="Original file name")
+    file_type: Literal["pdf", "docx", "txt", "xlsx"] = Field(description="File type")
+    document_type: Literal["financials", "bylaws", "due_diligence", "cap_table", "employment", "ip_assignment", "other"] = Field(description="Category of document")
+    summary: str = Field(default="", description="AI-generated summary of document contents")
+    key_terms: List[str] = Field(default_factory=list, description="Extracted key terms relevant to negotiation")
+    upload_date: str = Field(description="Timestamp of upload")
+
 class PartyConfig(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
@@ -51,7 +60,8 @@ class PartyConfig(BaseModel):
                 "constraints": [],
                 "agent_style": "balanced",
                 "constraint_summary": "Do not accept liability > 50k",
-                "company_context": ""
+                "company_context": "",
+                "documents": []
             }
         }
     )
@@ -61,6 +71,7 @@ class PartyConfig(BaseModel):
     agent_style: Literal["aggressive","balanced","cooperative"] = Field(default="balanced", description="Negotiation style")
     constraint_summary: str = Field(default="", description="Summary of constraints for LLM")
     company_context: str = Field(default="", description="Optional background document context")
+    documents: List[CompanyDocument] = Field(default_factory=list, description="Uploaded prerequisite documents")
 class Clause(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={

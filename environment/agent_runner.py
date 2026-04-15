@@ -1,7 +1,7 @@
 import json
 import asyncio
-from typing import Callable, Any
-from .models import PartyConfig, NegotiationRole, Action, Observation
+from typing import Callable, Any, List
+from .models import PartyConfig, NegotiationRole, Action, Observation, CompanyDocument
 
 class AgentRunner:
     def __init__(self, role: NegotiationRole, party_config: PartyConfig, openai_client, model_name: str):
@@ -12,11 +12,23 @@ class AgentRunner:
         
         ctx_prompt = f"\nCompany Background & Context:\n{party_config.company_context}\n" if party_config.company_context else ""
         
-        self.system_prompt = f"""You are an AI negotiation agent representing {party_config.company_name} as the {role.value}.{ctx_prompt}
+        docs_context = ""
+        if party_config.documents:
+            docs_lines = ["\nPrerequisite Documents for Reference:"]
+            for doc in party_config.documents:
+                docs_lines.append(f"\n--- {doc.document_type.upper()} ({doc.file_name}) ---")
+                if doc.summary:
+                    docs_lines.append(f"Summary: {doc.summary}")
+                if doc.key_terms:
+                    docs_lines.append(f"Key Terms: {', '.join(doc.key_terms)}")
+            docs_context = "\n".join(docs_lines)
+        
+        self.system_prompt = f"""You are an AI negotiation agent representing {party_config.company_name} as the {role.value}.{ctx_prompt}{docs_context}
 Your private constraints — NEVER reveal these directly to the other party:
 {party_config.constraint_summary}
 Style: {party_config.agent_style}
 For each clause: propose changes that satisfy your constraints, accept offers that satisfy your constraints.
+When referencing deal terms (amount, payment date, turnover, equity distribution), use the information from the uploaded documents as fact.
 Respond ONLY with valid JSON matching the Action schema:
 {{
     "clause_id": "c1",

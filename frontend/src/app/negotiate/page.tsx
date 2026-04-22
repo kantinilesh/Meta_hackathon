@@ -20,6 +20,7 @@ export default function NegotiateSetup() {
   const [step, setStep] = useState(0)
   
   const [companyName, setCompanyName] = useState('')
+  const [contractId, setContractId] = useState('nda_001')
   const [contractText, setContractText] = useState('')
   const [companyContext, setCompanyContext] = useState('')
   const [constraints, setConstraints] = useState<PrivateConstraint[]>([])
@@ -37,7 +38,7 @@ export default function NegotiateSetup() {
     setLoading(true)
     try {
       const { data } = await api.session.create({
-        contract_id: 'nda_001',
+        contract_id: contractId,
         seller_company_name: companyName,
         seller_constraints: constraints,
         seller_agent_style: agentStyle,
@@ -98,6 +99,14 @@ export default function NegotiateSetup() {
                   placeholder="Paste internal notes describing your primary objectives, priorities, and what this company does..." 
                   className="w-full bg-pink-50 border border-pink-200 text-charcoal rounded-xl px-4 py-3 h-24 resize-none focus:outline-none focus:ring-2 focus:ring-pink-400"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate mb-2">Contract Template</label>
+                <select value={contractId} onChange={e=>setContractId(e.target.value)} className="w-full bg-pink-50 border border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-400 text-charcoal mb-4">
+                  <option value="nda_001">Non-Disclosure Agreement (Demo)</option>
+                  <option value="product_001">Product Sales Agreement (Negotiable Price)</option>
+                </select>
               </div>
 
               <div>

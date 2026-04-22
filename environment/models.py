@@ -19,6 +19,7 @@ class NegotiationRole(str, Enum):
 class SessionStatus(str, Enum):
     waiting_seller="waiting_seller"; waiting_client="waiting_client"
     ready="ready"; negotiating="negotiating"; completed="completed"; failed="failed"
+    paused="paused"
 
 class PrivateConstraint(BaseModel):
     model_config = ConfigDict(

@@ -11,6 +11,8 @@ import { PrivateConstraintPanel } from '@/components/negotiation/PrivateConstrai
 import { ScoreMeter } from '@/components/negotiation/ScoreMeter'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { Button } from '@/components/ui/Button'
+import { InterventionModal } from '@/components/session/InterventionModal'
+import { AlertTriangle, Pause } from 'lucide-react'
 
 export default function SessionRoom({ params }: { params: { sessionId: string } }) {
   const router = useRouter()
@@ -20,12 +22,15 @@ export default function SessionRoom({ params }: { params: { sessionId: string } 
   const { turns, isConnected, isComplete } = useNegotiationSocket(params.sessionId, role)
   const [sessionData, setSessionData] = useState<any>(null)
   const [activeClauseId, setActiveClauseId] = useState<string>('c1')
+  const [showIntervention, setShowIntervention] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
 
   useEffect(() => {
     // Initial fetch
     api.session.status(params.sessionId, undefined, role).then(res => {
       setSessionData(res.data)
       if (res.data.clauses?.length > 0) setActiveClauseId(res.data.clauses[0].id)
+      if (res.data.status === 'paused') setIsPaused(true)
     })
   }, [params.sessionId, role])
 
@@ -56,6 +61,17 @@ export default function SessionRoom({ params }: { params: { sessionId: string } 
   const agreedCount = clauseState.filter(c => c.status === 'agreed').length
   const agreementPct = agreedCount / total
 
+  const handleIntervene = async (rewindToTurn: number, updatedConstraints: any[]) => {
+    await api.session.intervene(params.sessionId, role, rewindToTurn, updatedConstraints)
+    setIsPaused(true)
+  }
+
+  const handleResume = async () => {
+    await api.session.resume(params.sessionId)
+    setIsPaused(false)
+    setShowIntervention(false)
+  }
+
   if (!sessionData) return <div className="h-screen bg-pink-50 flex items-center justify-center text-charcoal">Loading...</div>
 
   if (isComplete || sessionData.status === 'completed') {
@@ -64,7 +80,7 @@ export default function SessionRoom({ params }: { params: { sessionId: string } 
         <h1 className="font-display font-bold text-4xl mb-4">Negotiation Complete</h1>
         <p className="text-slate mb-8 max-w-xl">Both agents have reached an agreement on all possible clauses.</p>
         <Button onClick={() => router.push(`/session/${params.sessionId}/sign`)}>
-          Review & Sign Final Contract &rarr;
+          Review &amp; Sign Final Contract &rarr;
         </Button>
       </div>
     )
@@ -83,6 +99,20 @@ export default function SessionRoom({ params }: { params: { sessionId: string } 
         <div className="flex-1 overflow-y-auto">
           <PrivateConstraintPanel constraints={me?.constraints || []} />
         </div>
+
+        {/* HUMAN INTERVENTION BUTTON */}
+        <div className="mt-4 pt-4 border-t border-pink-100">
+          <button
+            onClick={() => setShowIntervention(true)}
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-3 rounded-xl font-semibold text-sm hover:from-amber-600 hover:to-orange-600 transition-all shadow-lg shadow-amber-200 hover:shadow-amber-300 active:scale-[0.98]"
+          >
+            {isPaused ? (
+              <><Pause className="w-4 h-4" /> Paused — Edit Constraints</>
+            ) : (
+              <><AlertTriangle className="w-4 h-4" /> Intervene</>
+            )}
+          </button>
+        </div>
         
         <div className="mt-4 pt-4 border-t border-pink-100">
           <div className="text-xs font-semibold text-slate mb-1">Turn Budget</div>
@@ -97,7 +127,14 @@ export default function SessionRoom({ params }: { params: { sessionId: string } 
       <div className="flex-1 flex flex-col relative overflow-hidden bg-cream">
         <div className="px-6 py-4 bg-white/80 backdrop-blur border-b border-pink-200 flex items-center justify-between z-10">
           <h1 className="font-display text-xl font-bold">{me?.company_name} <span className="text-pink-300 font-normal italic mx-2">vs</span> {otherName}</h1>
-          <LiveBadge />
+          <div className="flex items-center gap-3">
+            {isPaused && (
+              <span className="bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1 rounded-full animate-pulse flex items-center gap-1">
+                <Pause className="w-3 h-3" /> PAUSED
+              </span>
+            )}
+            <LiveBadge />
+          </div>
         </div>
         
         <ClauseTabBar clauses={clauseState} activeId={activeClauseId} onChange={setActiveClauseId} />
@@ -111,7 +148,11 @@ export default function SessionRoom({ params }: { params: { sessionId: string } 
         <ChatFeed turns={turns} isComplete={isComplete} nextSpeaker={nextSpeaker} />
         
         <div className="px-6 py-4 bg-white border-t border-pink-200 text-center">
-          <p className="text-sm text-slate animate-pulse font-medium">AI agents are negotiating automatically...</p>
+          {isPaused ? (
+            <p className="text-sm text-amber-600 font-semibold">⏸️ Negotiation paused. Edit your constraints and resume.</p>
+          ) : (
+            <p className="text-sm text-slate animate-pulse font-medium">AI agents are negotiating automatically...</p>
+          )}
         </div>
       </div>
 
@@ -137,6 +178,19 @@ export default function SessionRoom({ params }: { params: { sessionId: string } 
           </div>
         </div>
       </div>
+
+      {/* INTERVENTION MODAL */}
+      <InterventionModal
+        isOpen={showIntervention}
+        onClose={() => setShowIntervention(false)}
+        role={role}
+        currentTurn={turns.length}
+        maxTurns={sessionData.max_turns}
+        currentConstraints={me?.constraints || []}
+        onIntervene={handleIntervene}
+        onResume={handleResume}
+        isPaused={isPaused}
+      />
     </div>
   )
 }

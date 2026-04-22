@@ -77,7 +77,8 @@ export function ConstraintBuilder({ onAdd }: { onAdd: (c: PrivateConstraint) => 
             <label className="block text-xs font-semibold text-slate mb-1">Rule Type</label>
             <select value={form.rule} onChange={e=>setForm({...form, rule: e.target.value as any})} className="w-full bg-pink-50 border border-pink-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400">
               <option value="must_include">Must Include</option><option value="must_exclude">Must Exclude</option>
-              <option value="max_value">Max Value</option><option value="prefer">Prefer</option>
+              <option value="max_value">Max Value</option><option value="min_value">Min Value</option>
+              <option value="prefer">Prefer</option>
             </select>
           </div>
           <div>

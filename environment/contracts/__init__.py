@@ -11,7 +11,9 @@ from __future__ import annotations
 from typing import Any, Dict
 
 from .nda_template import load_contract
+from .product_sales_template import load_product_contract
 
 __all__ = [
     "load_contract",
+    "load_product_contract"
 ]

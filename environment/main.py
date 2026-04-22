@@ -18,6 +18,7 @@ from .env import ContractEnv
 from .dual_env import DualAgentEnv
 from .agent_runner import AgentRunner
 from .contracts.nda_template import TASK_CONTRACTS, load_contract
+from .contracts.product_sales_template import load_product_contract
 
 app = FastAPI(title="ContractEnv", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -34,7 +35,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 try:
-    openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY", "dummy"), base_url=os.getenv("API_BASE_URL", "https://api.openai.com/v1"))
+    openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY", os.getenv("API_KEY", "dummy")), base_url=os.getenv("API_BASE_URL", "https://api.openai.com/v1"))
 except:
     openai_client = None
 
@@ -226,7 +227,19 @@ def session_create(req: SessionCreateReq):
     session_id = str(uuid.uuid4())
     invite_token = secrets.token_urlsafe(16)
     
-    contract_data = load_contract("task3") # Base contract
+    if req.contract_id == "product_001":
+        contract_data = load_product_contract()
+        req.seller_constraints.append({
+            "constraint_id": "sys_spec",
+            "description": "The Product Specifications MUST NOT be modified from the original text.",
+            "clause_category": "scope",
+            "is_deal_breaker": True,
+            "rule_type": "must_include",
+            "rule_value": "original text",
+            "priority": 10
+        })
+    else:
+        contract_data = load_contract("task3") # Base contract
     
     seller_config = PartyConfig(
         role="seller",
@@ -379,6 +392,98 @@ def session_sign(req: SessionSignReq):
         session.client_signed = True
     return {"status": "signed"}
 
+# ── HUMAN INTERVENTION ──────────────────────────────────────────────
+
+class SessionInterveneReq(BaseModel):
+    session_id: str
+    role: str  # seller or client
+    rewind_to_turn: int = 0  # 0 = restart from scratch
+    updated_constraints: List[dict] = []
+
+@app.post("/session/intervene")
+async def session_intervene(req: SessionInterveneReq):
+    """Pause a live negotiation, rewind history, and update constraints."""
+    if req.session_id not in negotiation_sessions:
+        raise HTTPException(404, "Session not found")
+    session = negotiation_sessions[req.session_id]
+
+    # 1. Pause the negotiation loop
+    session.status = "paused"
+    await asyncio.sleep(0.5)  # give the loop time to stop
+
+    # 2. Broadcast pause event
+    await broadcast_turn(req.session_id, NegotiationTurn(
+        turn_number=session.turn, speaker="system", action_type="skip", clause_id="",
+        content=f"⏸️ Human intervention by {req.role}. Negotiation paused at turn {session.turn}."
+    ))
+
+    # 3. Rewind history to the requested turn
+    session.negotiation_history = [
+        t for t in session.negotiation_history if t.turn_number <= req.rewind_to_turn
+    ]
+    session.turn = req.rewind_to_turn
+
+    # 4. Reset clause statuses for clauses that were agreed AFTER the rewind point
+    agreed_clause_ids_to_reset = []
+    for t in list(session.final_agreed_clauses.keys()):
+        # Check if the agreement happened after the rewind point
+        agreement_turn = next(
+            (h for h in session.negotiation_history
+             if h.clause_id == t and h.action_type == "accept"),
+            None
+        )
+        if agreement_turn is None:
+            agreed_clause_ids_to_reset.append(t)
+    for cid in agreed_clause_ids_to_reset:
+        del session.final_agreed_clauses[cid]
+        for c in session.clauses:
+            if c.id == cid:
+                c.status = "pending"
+                c.current_proposed_text = None
+
+    # 5. Update constraints if provided
+    if req.updated_constraints:
+        if req.role == "seller" and session.seller_config:
+            session.seller_config.constraints = req.updated_constraints
+            session.seller_config.constraint_summary = "Updated constraints (human intervention)"
+        elif req.role == "client" and session.client_config:
+            session.client_config.constraints = req.updated_constraints
+            session.client_config.constraint_summary = "Updated constraints (human intervention)"
+
+    await broadcast_turn(req.session_id, NegotiationTurn(
+        turn_number=session.turn, speaker="system", action_type="skip", clause_id="",
+        content=f"🔄 Constraints updated by {req.role}. Negotiation rewound to turn {req.rewind_to_turn}. Ready to resume."
+    ))
+
+    return {
+        "status": "paused",
+        "rewound_to": req.rewind_to_turn,
+        "constraints_updated": len(req.updated_constraints) > 0,
+        "history_length": len(session.negotiation_history)
+    }
+
+class SessionResumeReq(BaseModel):
+    session_id: str
+
+@app.post("/session/resume")
+async def session_resume(req: SessionResumeReq):
+    """Resume a paused negotiation after human intervention."""
+    if req.session_id not in negotiation_sessions:
+        raise HTTPException(404, "Session not found")
+    session = negotiation_sessions[req.session_id]
+    if session.status != "paused":
+        raise HTTPException(400, "Session is not paused")
+    session.status = "negotiating"
+
+    await broadcast_turn(req.session_id, NegotiationTurn(
+        turn_number=session.turn, speaker="system", action_type="skip", clause_id="",
+        content="▶️ Negotiation resumed with updated constraints."
+    ))
+
+    asyncio.create_task(run_negotiation(req.session_id))
+    return {"status": "negotiating", "resumed_from_turn": session.turn}
+
+
 @app.get("/session/contract")
 def session_contract(session_id: str):
     if session_id not in negotiation_sessions:
@@ -439,14 +544,22 @@ async def run_negotiation(session_id: str):
     client_runner = AgentRunner(NegotiationRole.client, session.client_config, openai_client, os.getenv("MODEL_NAME", "gpt-4o-mini"))
     
     while not dual_env.is_complete():
+        # Check if human intervened
+        if session.status == "paused":
+            return  # exit loop cleanly; resume will spawn a new task
+
         # Seller turn
         obs_s = dual_env.get_observation(NegotiationRole.seller)
         action_s = await seller_runner.decide_action(obs_s)
         _, _, done = dual_env.step_seller(action_s)
         await broadcast_turn(session_id, session.negotiation_history[-1])
-        await asyncio.sleep(2) # Fake typing delay
+        await asyncio.sleep(2)
         if done: break
-        
+
+        # Check pause again between turns
+        if session.status == "paused":
+            return
+
         # Client turn
         obs_c = dual_env.get_observation(NegotiationRole.client)
         action_c = await client_runner.decide_action(obs_c)

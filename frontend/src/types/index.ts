@@ -2,7 +2,7 @@ export type ClauseCategory = 'scope' | 'duration' | 'ip' | 'liability' | 'jurisd
 export type ClauseLabel = 'fair' | 'unfair' | 'neutral'
 export type ActionType = 'flag' | 'propose' | 'accept' | 'reject' | 'skip' | 'counter'
 export type NegotiationRole = 'seller' | 'client'
-export type SessionStatus = 'waiting_seller' | 'waiting_client' | 'ready' | 'negotiating' | 'completed' | 'failed'
+export type SessionStatus = 'waiting_seller' | 'waiting_client' | 'ready' | 'negotiating' | 'completed' | 'failed' | 'paused'
 export type DocumentType = 'financials' | 'bylaws' | 'due_diligence' | 'cap_table' | 'employment' | 'ip_assignment' | 'other'
 
 export interface CompanyDocument {

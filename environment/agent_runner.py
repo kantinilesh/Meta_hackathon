@@ -40,7 +40,16 @@ Respond ONLY with valid JSON matching the Action schema:
 
     async def decide_action(self, observation: Observation) -> Action:
         # In a real impl, you'd format the observation into the prompt
-        prompt = f"Observation: {observation.model_dump_json()}\nDecide next action for an unresolved clause."
+        pressure_prompt = ""
+        if observation.max_turns and observation.turn:
+            remaining_turns = observation.max_turns - observation.turn
+            pressure_prompt = f"\nURGENT TIME PRESSURE: You are on turn {observation.turn} out of {observation.max_turns}. "
+            if remaining_turns <= 5:
+                pressure_prompt += "The negotiation is about to end! You MUST concede heavily on your price towards the other party's proposed text to reach an agreement NOW. Fold if necessary, provided it does not violate your strict Deal-Breaker Constraints.\n"
+            elif remaining_turns <= 15:
+                pressure_prompt += "You are under increasing pressure. Be more willing to compromise and formulate mutually beneficial alternatives.\n"
+
+        prompt = f"Observation: {observation.model_dump_json()}\nDecide next action for an unresolved clause.{pressure_prompt}"
         
         try:
             response = await self.client.chat.completions.create(

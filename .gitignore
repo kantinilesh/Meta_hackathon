@@ -6,6 +6,7 @@
 
 # ── .env / Secrets ───────────────────────────────────────────────────
 .env
+.venv
 frontend/bin/
 frontend/.next/
 .env.local
@@ -14,6 +15,8 @@ frontend/.next/
 *.pem
 *.key
 secrets/
+node_modules/
+frontend/node_modules/
 
 # ── Python ───────────────────────────────────────────────────────────
 __pycache__/

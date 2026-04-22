@@ -44,6 +44,9 @@ export const api = {
       client.get('/session/status', { params: { session_id: sessionId, invite_token: inviteToken, role } }),
     sign: (sessionId: string, role: string) => client.post('/session/sign', { session_id: sessionId, role }),
     contract: (sessionId: string) => client.get('/session/contract', { params: { session_id: sessionId } }),
+    intervene: (sessionId: string, role: string, rewindToTurn: number, updatedConstraints: any[]) =>
+      client.post('/session/intervene', { session_id: sessionId, role, rewind_to_turn: rewindToTurn, updated_constraints: updatedConstraints }),
+    resume: (sessionId: string) => client.post('/session/resume', { session_id: sessionId }),
   },
 }
 

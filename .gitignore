@@ -17,6 +17,12 @@ frontend/.next/
 secrets/
 node_modules/
 frontend/node_modules/
+node_modules/
+frontend/node_modules/
+.next/
+.venv/
+dist/
+build/
 
 # ── Python ───────────────────────────────────────────────────────────
 __pycache__/

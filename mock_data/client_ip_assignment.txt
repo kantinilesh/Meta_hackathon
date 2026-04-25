@@ -1,0 +1,87 @@
+STARTUP INC — INTELLECTUAL PROPERTY REGISTRY
+================================================
+Date: March 1, 2026
+Prepared for: Pre-Acquisition IP Disclosure
+
+PROPRIETARY SOFTWARE & TECHNOLOGY
+------------------------------------
+
+1. LegalAI Core Platform (v3.2)
+   - Description: End-to-end contract analysis platform using transformer-based NLP models
+   - Languages: Python, TypeScript, Rust (inference engine)
+   - Lines of Code: ~85,000 LOC
+   - License: Proprietary (all rights reserved)
+   - Status: Production, deployed to 42 customers
+
+2. ClauseExtract ML Pipeline
+   - Description: Fine-tuned BERT model for legal clause identification and classification
+   - Training Data: 45,000 annotated legal contracts (proprietary dataset)
+   - Model Performance: 94.2% F1-score on clause identification
+   - License: Proprietary
+   - Status: Production
+
+3. RiskScore Algorithm (v2.1)
+   - Description: Deterministic + ML hybrid scoring system for contract risk assessment
+   - Inputs: Clause text, historical precedent database, jurisdiction rules
+   - Output: Risk score (0-100) with explanatory breakdown
+   - License: Proprietary
+   - Status: Production
+
+PATENTS (PROVISIONAL)
+-----------------------
+
+| Patent ID  | Title                                        | Filing Date | Status      |
+|------------|----------------------------------------------|-------------|-------------|
+| US-PROV-001| NLP-Based Legal Clause Extraction System     | Jan 2025    | Provisional |
+| US-PROV-002| Automated Contract Risk Scoring Method       | Apr 2025    | Provisional |
+| US-PROV-003| Multi-Party Document Summarization Engine    | Sep 2025    | Provisional |
+
+PRE-EXISTING IP (FOUNDERS' PRIOR WORK)
+-----------------------------------------
+
+The following IP was created BEFORE Startup Inc's incorporation and remains the personal property of the founders. These must be explicitly carved out from any IP assignment clause:
+
+1. "DocParser" — Open-source PDF parsing library (MIT license)
+   Owner: Priya Sharma
+   Created: 2020 (during PhD at Stanford)
+   GitHub: github.com/priyasharma/docparser (2,400 stars)
+   Note: Used as a dependency in LegalAI but NOT assigned to company
+
+2. "StreamQL" — Real-time data query language prototype
+   Owner: James Chen
+   Created: 2021 (personal project at Stripe)
+   Status: Unpublished, private repository
+   Note: Not used in any Startup Inc product
+
+3. "MLFlow Templates" — ML experiment tracking templates
+   Owner: James Chen
+   Created: 2019
+   License: Apache 2.0 (open source)
+   Note: General-purpose tooling, not specific to legal tech
+
+THIRD-PARTY DEPENDENCIES
+---------------------------
+All open-source dependencies use permissive licenses:
+- PyTorch (BSD)
+- Hugging Face Transformers (Apache 2.0)
+- FastAPI (MIT)
+- Next.js (MIT)
+- PostgreSQL (PostgreSQL License)
+
+No GPL or copyleft dependencies in production code.
+
+TRADEMARKS
+-----------
+- "LegalAI" — Registered trademark (US, Class 42)
+- "Startup Inc" — Registered trademark (US, Class 42)
+
+DOMAIN NAMES
+--------------
+- legalai.com (registered through 2028)
+- startupinc.io (registered through 2027)
+
+TRADE SECRETS
+--------------
+- Proprietary training dataset of 45,000 annotated legal contracts
+- Customer-specific fine-tuning methodology
+- Internal benchmark suite for model performance evaluation

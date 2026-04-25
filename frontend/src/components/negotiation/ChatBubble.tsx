@@ -28,8 +28,9 @@ export function ChatBubble({ role, message, meta }: { role: 'seller_agent'|'clie
         )}>
           <p className="text-sm leading-relaxed">{message}</p>
           {meta?.proposed_text && (
-            <div className="mt-3 bg-white/50 border-l-4 border-pink-400 pl-3 py-2 text-sm italic font-medium text-slate">
-              "{meta.proposed_text}"
+            <div className="mt-3 bg-white/70 border-l-4 border-pink-400 pl-3 py-2 rounded-r-lg">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-pink-500 mb-1">📝 Proposed Redline</p>
+              <p className="text-sm italic text-slate leading-relaxed">"{meta.proposed_text}"</p>
             </div>
           )}
         </div>

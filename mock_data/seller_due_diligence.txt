@@ -1,0 +1,73 @@
+DUE DILIGENCE REPORT — ACQUISITION TARGET: STARTUP INC
+========================================================
+Prepared by: Acquirer Corp Legal & Strategy Team
+Date: March 15, 2026
+Classification: CONFIDENTIAL
+
+EXECUTIVE SUMMARY
+------------------
+Startup Inc is a promising early-stage AI/ML company specializing in natural language processing (NLP) for legal document analysis. The company has a strong technical team and proprietary IP, but carries moderate operational risk due to its small customer base and dependency on two key engineers.
+
+COMPANY OVERVIEW
+-----------------
+Legal Name:           Startup Inc
+Incorporated:         State of California, 2022
+Employees:            28 (18 engineering, 4 sales, 6 operations)
+Physical Office:      San Francisco, CA (WeWork lease, expires Dec 2026)
+Product:              LegalAI — contract review and risk scoring platform
+
+FINANCIAL POSITION
+-------------------
+Revenue (TTM):        $3,200,000
+Burn Rate:            $420,000/month
+Cash on Hand:         $2,100,000
+Runway Remaining:     ~5 months
+Total Funding:        $8,500,000 (Seed + Series A)
+Total Debt:           $500,000 (convertible note from angel round)
+
+CUSTOMER BASE
+--------------
+Total Customers:      42
+Enterprise Clients:   8 (represent 74% of revenue)
+Top Client Revenue:   $680,000/year (LawFirm Partners LLP)
+NRR:                  105%
+Monthly Churn:        3.2%
+
+INTELLECTUAL PROPERTY
+----------------------
+- 3 provisional patents (NLP clause extraction, contract risk scoring, multi-party summarization)
+- 12,400 lines of proprietary ML training pipeline code (Python, PyTorch)
+- Proprietary training dataset: 45,000 annotated legal contracts
+- No active IP disputes or licensing encumbrances
+- Open-source dependencies: PyTorch, Hugging Face Transformers (MIT/Apache licenses)
+
+KEY PERSONNEL
+--------------
+CEO/Co-Founder:       Priya Sharma (ex-Google AI Research, 8 years ML experience)
+CTO/Co-Founder:       James Chen (ex-Stripe, 6 years infrastructure experience)
+VP Engineering:        Maria Rodriguez (ex-Meta, 5 years engineering management)
+
+RISKS IDENTIFIED
+-----------------
+1. HIGH RISK: Key-person dependency on CTO (James Chen). His departure would significantly impact product development timeline.
+2. MEDIUM RISK: 5-month runway. Without acquisition or additional funding, the company faces operational challenges by Q3 2026.
+3. MEDIUM RISK: Customer concentration — top 3 clients represent 58% of total revenue.
+4. LOW RISK: Open-source license compliance review passed with no issues.
+5. LOW RISK: No pending litigation or regulatory inquiries.
+
+RECOMMENDATIONS
+----------------
+- Proceed with acquisition at valuation range: $18M - $25M
+- Require 2-year retention agreements for CEO and CTO with $500K earnout each
+- IP assignment clause must be comprehensive but include carve-out for documented pre-existing work
+- Non-compete should be narrowly scoped to NLP/legal-tech for 12 months, US-only
+- Recommend Delaware governing law for consistency with Acquirer Corp's corporate structure
+
+DEAL STRUCTURE RECOMMENDATION
+-------------------------------
+Proposed Acquisition Price:   $22,000,000
+  Cash Component:             $15,000,000 (68%)
+  Stock Component:            $5,000,000 (23%)
+  Earnout:                    $2,000,000 (9%) — contingent on 12-month revenue targets
+Escrow Holdback:              $2,200,000 (10%) for 18 months
+Working Capital Adjustment:   Standard via locked-box mechanism

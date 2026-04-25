@@ -39,9 +39,13 @@ class ContractAgent:
     def __init__(self, env_base_url: str):
         self.http = httpx.Client(base_url=env_base_url, timeout=30.0)
         self.model = os.getenv("MODEL_NAME", "gpt-4o-mini")
+        # Support both API_KEY and OPENAI_API_KEY env vars
+        api_key = os.environ.get("API_KEY") or os.environ.get("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("Neither API_KEY nor OPENAI_API_KEY is set in the environment.")
         self.llm = OpenAI(
-            api_key=os.environ["API_KEY"],
-            base_url=os.environ["API_BASE_URL"],
+            api_key=api_key,
+            base_url=os.environ.get("API_BASE_URL", "https://api.openai.com/v1"),
         )
 
     def reset_episode(self, task_id: str) -> tuple[dict, str]:

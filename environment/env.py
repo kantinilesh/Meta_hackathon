@@ -112,7 +112,7 @@ class ContractEnv:
                     clause.current_proposed_text = cp_resp.modified_text or action.proposed_text
                     reward_breakdown.agreement_bonus += 0.20
                 elif cp_resp.response_type == "deal_breaker_reject":
-                    reward_breakdown.break_counterparty_deal_breaker = -0.30
+                    reward_breakdown.deal_breaker_penalty += -0.30
 
                 # Persist the proposal outcome so grading can recover task progress later.
                 self.history.append(NegotiationTurn(

@@ -1,0 +1,86 @@
+STARTUP INC — FINANCIAL SUMMARY (FY 2025)
+============================================
+
+Company Name: Startup Inc
+Industry: AI/ML — Legal Technology (LegalTech)
+Founded: 2022
+Headquarters: San Francisco, California, USA
+
+REVENUE & PROFITABILITY
+-----------------------
+Total Revenue (FY 2025):          $3,200,000
+Year-over-Year Growth:            145%
+Gross Margin:                     68%
+Operating Loss:                   ($2,840,000)
+Net Loss:                         ($3,100,000)
+Monthly Burn Rate:                $420,000
+
+BALANCE SHEET
+-------------
+Total Assets:                     $4,800,000
+  Cash & Equivalents:             $2,100,000
+  Accounts Receivable:            $480,000
+  Property & Equipment:           $120,000
+  Intangible Assets (IP):         $2,100,000
+
+Total Liabilities:                $1,200,000
+  Accounts Payable:               $180,000
+  Convertible Note:               $500,000
+  Accrued Salaries:               $220,000
+  Deferred Revenue:               $300,000
+
+Total Equity:                     $3,600,000
+
+KEY FINANCIAL METRICS
+---------------------
+Customer Count:                   42 total (8 enterprise)
+Annual Recurring Revenue (ARR):   $2,900,000
+Net Revenue Retention:            105%
+Monthly Churn:                    3.2%
+Customer Acquisition Cost:        $15,000
+Lifetime Value (LTV):             $76,000
+LTV/CAC Ratio:                    5.1x
+Cash Runway:                      ~5 months (at current burn)
+
+FUNDING HISTORY
+----------------
+Seed Round (2022):                $2,500,000 at $10M pre-money valuation
+  Lead: Sequoia Capital
+Series A (2024):                  $6,000,000 at $30M pre-money valuation
+  Lead: Andreessen Horowitz (a16z)
+
+Total Raised:                     $8,500,000
+
+REVENUE BREAKDOWN BY SEGMENT
+------------------------------
+Enterprise SaaS Subscriptions:    $2,370,000 (74%)
+SMB Self-Serve:                   $510,000 (16%)
+Professional Services:            $320,000 (10%)
+
+TOP CLIENTS
+------------
+1. LawFirm Partners LLP           $680,000/year
+2. Wilson & Associates             $420,000/year
+3. TechDefend Corp                 $280,000/year
+(Top 3 = 43% of revenue)
+
+EMPLOYEE COSTS
+---------------
+Total Headcount:                  28
+Engineering:                      18 ($3,800,000 annual)
+Sales & Marketing:                4  ($680,000 annual)
+Operations & Admin:               6  ($720,000 annual)
+Total Payroll + Benefits:         $5,200,000/year
+
+R&D EXPENDITURE
+----------------
+R&D Spend (FY 2025):             $4,100,000 (128% of revenue)
+Areas: ML model training, data annotation, infrastructure
+
+NEGOTIATION CONTEXT FOR SELLER
+-------------------------------
+We need this acquisition to close. Our 5-month runway means we have limited leverage on timeline, but our IP and team are our strongest assets. Key priorities:
+- Maximize cash component (we have investors to pay back $11M in liquidation preferences)
+- Retain key engineering talent (ensure fair retention packages)
+- Protect founders' pre-existing IP and side projects
+- Limit non-compete to avoid restricting future career options

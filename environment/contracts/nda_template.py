@@ -118,7 +118,7 @@ DEFAULT_CLIENT_CONSTRAINTS = [
 TASK_CONTRACTS = {
     "task1": {"clauses": ["c1", "c2", "c3", "c4", "c5", "c6"], "max_turns": 20},
     "task2": {"clauses": ["c1", "c2", "c3", "c6"], "max_turns": 30},
-    "task3": {"clauses": ["c2", "c3"], "max_turns": 50},
+    "task3": {"clauses": ["c2", "c3"], "max_turns": 40},
 }
 
 def load_contract(task_id: str) -> dict:

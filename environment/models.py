@@ -140,7 +140,8 @@ class Action(BaseModel):
             "example": {
                 "clause_id": "c1",
                 "action_type": "propose",
-                "proposed_text": "New text."
+                "proposed_text": "New text.",
+                "content": "We propose limiting the scope to 12 months."
             }
         }
     )
@@ -149,6 +150,7 @@ class Action(BaseModel):
     label: Optional[ClauseLabel] = Field(default=None, description="Task 1 fairness label")
     reason: Optional[str] = Field(default=None, description="Task 1 flag reason")
     proposed_text: Optional[str] = Field(default=None, description="Task 2/3 redlined text")
+    content: Optional[str] = Field(default=None, description="Natural language negotiation message from the agent")
     internal_reasoning: Optional[str] = Field(default=None, description="Chain of thought for the action")
 
 class RewardBreakdown(BaseModel):
@@ -190,7 +192,7 @@ class NegotiationSession(BaseModel):
     created_at: str
     invite_token: str
     turn: int = 0
-    max_turns: int = 100
+    max_turns: int = 40
 
 class GradeResult(BaseModel):
     task_id: str

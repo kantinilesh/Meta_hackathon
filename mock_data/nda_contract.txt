@@ -1,0 +1,52 @@
+NON-DISCLOSURE AGREEMENT
+
+Between: Acquirer Corp ("Company") and Startup Inc ("Recipient")
+Effective Date: [Date of Execution]
+
+This Non-Disclosure Agreement ("Agreement") is entered into by and between Acquirer Corp, a Delaware corporation ("Company"), and Startup Inc, a California corporation ("Recipient"), collectively referred to as the "Parties."
+
+RECITALS
+
+WHEREAS, the Company and Recipient wish to explore a potential business relationship, which may include discussions related to a potential acquisition, strategic partnership, or technology licensing arrangement (the "Purpose"); and
+
+WHEREAS, in connection with the Purpose, each Party may disclose to the other certain confidential and proprietary information;
+
+NOW, THEREFORE, in consideration of the mutual covenants and agreements herein, the Parties agree as follows:
+
+1. CONFIDENTIALITY SCOPE
+All information disclosed by Company, whether oral, written, or digital, shall be deemed Confidential Information in perpetuity. This includes, but is not limited to: trade secrets, financial data, customer lists, business plans, product roadmaps, source code, algorithms, technical specifications, marketing strategies, personnel information, and any other information that a reasonable person would consider confidential.
+
+2. NON-COMPETE
+Recipient agrees not to engage in any business activity that competes with Company's current or future products for a period of 5 years globally. This restriction applies to the Recipient, its officers, directors, employees, agents, and any affiliated entities. For purposes of this clause, "compete" means directly or indirectly developing, marketing, selling, or licensing any product or service that is substantially similar to any Company product.
+
+3. INTELLECTUAL PROPERTY ASSIGNMENT
+Any ideas, inventions, or improvements conceived during discussions with Company shall be assigned exclusively to Company, regardless of prior ownership. This includes all patents, copyrights, trade secrets, and other intellectual property rights associated with such inventions. Recipient hereby irrevocably assigns all right, title, and interest in such IP to Company.
+
+4. GOVERNING LAW
+This Agreement shall be governed by the laws of Delaware, USA. Any disputes arising under or in connection with this Agreement shall be resolved exclusively in the state or federal courts located in Wilmington, Delaware. Each Party consents to the personal jurisdiction and venue of such courts.
+
+5. TERM
+This Agreement shall remain in effect for 2 years from the date of signing. Upon expiration, the confidentiality obligations shall survive for an additional period as specified in Section 1.
+
+6. REMEDIES
+Company may seek unlimited injunctive relief and damages for any breach without limitation or cap. In the event of a breach or threatened breach, the Company shall be entitled to seek injunctive relief, specific performance, and any other remedies available at law or in equity, without the need to post bond or prove actual damages. The Recipient acknowledges that monetary damages alone would be inadequate.
+
+GENERAL PROVISIONS
+
+Entire Agreement: This Agreement constitutes the entire agreement between the Parties concerning the subject matter hereof and supersedes all prior agreements and understandings.
+
+Amendment: This Agreement may not be amended except by a written instrument signed by both Parties.
+
+Severability: If any provision of this Agreement is held invalid or unenforceable, the remaining provisions shall continue in full force and effect.
+
+Waiver: The failure of either Party to enforce any provision shall not constitute a waiver of that Party's right to enforce that provision in the future.
+
+Counterparts: This Agreement may be executed in counterparts, each of which shall be deemed an original.
+
+IN WITNESS WHEREOF, the Parties have executed this Agreement as of the date first written above.
+
+_________________________          _________________________
+Acquirer Corp                      Startup Inc
+By: [Authorized Signatory]         By: [Authorized Signatory]
+Title: [Title]                     Title: [Title]
+Date: [Date]                       Date: [Date]

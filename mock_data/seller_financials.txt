@@ -1,0 +1,64 @@
+ACQUIRER CORP — FINANCIAL SUMMARY (FY 2025)
+=============================================
+
+Company Name: Acquirer Corp
+Industry: Enterprise SaaS / Cloud Infrastructure
+Founded: 2018
+Headquarters: Wilmington, Delaware, USA
+
+REVENUE & PROFITABILITY
+-----------------------
+Total Revenue (FY 2025):          $42,500,000
+Year-over-Year Growth:            38%
+Gross Margin:                     72%
+Operating Income:                 $8,200,000
+Net Income:                       $6,100,000
+EBITDA:                           $11,300,000
+
+BALANCE SHEET
+-------------
+Total Assets:                     $87,000,000
+  Cash & Equivalents:             $23,400,000
+  Accounts Receivable:            $7,800,000
+  Property & Equipment:           $4,200,000
+  Intangible Assets (IP):         $18,600,000
+  Goodwill:                       $33,000,000
+
+Total Liabilities:                $31,000,000
+  Accounts Payable:               $3,200,000
+  Short-term Debt:                $5,000,000
+  Long-term Debt:                 $18,800,000
+  Deferred Revenue:               $4,000,000
+
+Total Equity:                     $56,000,000
+
+KEY FINANCIAL METRICS
+---------------------
+Customer Count:                   340 enterprise clients
+Annual Recurring Revenue (ARR):   $39,200,000
+Net Revenue Retention:            118%
+Customer Acquisition Cost:        $28,000
+Lifetime Value (LTV):             $312,000
+LTV/CAC Ratio:                    11.1x
+Burn Rate:                        N/A (profitable)
+Runway:                           Infinite (cash flow positive)
+
+VALUATION
+---------
+Last Funding Round:               Series C ($45M at $320M valuation)
+Current Estimated Valuation:      $450,000,000
+Revenue Multiple:                 10.6x
+EBITDA Multiple:                  39.8x
+
+NOTABLE FINANCIAL EVENTS
+-------------------------
+- Acquired CloudSync Labs in Q2 2025 for $12M (talent + IP acquisition)
+- Secured $15M revolving credit facility from Silicon Valley Bank
+- Paid out $2.1M in dividends to preferred shareholders in Q4 2025
+- R&D expenditure: $9,800,000 (23% of revenue)
+
+RISK FACTORS
+------------
+- 35% of revenue concentrated in top 5 enterprise accounts
+- Pending patent litigation with DataFlow Inc. (estimated liability: $2-5M)
+- Currency exchange exposure: 22% of revenue from EU clients (EUR)

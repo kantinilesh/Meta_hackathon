@@ -1,13 +1,37 @@
 {
   "environment": "contract-env",
   "version": "1.0.0",
-  "model": "MODEL_NAME_HERE",
-  "timestamp": "2026-04-02T00:00:00+00:00",
+  "model": "gpt-4o-mini",
+  "timestamp": "2026-04-25T04:42:26.502843+00:00",
   "tasks": [
-    {"task_id": "task1", "score": 0.0, "steps": 0, "duration_seconds": 0.0, "passed": false},
-    {"task_id": "task2", "score": 0.0, "steps": 0, "duration_seconds": 0.0, "passed": false},
-    {"task_id": "task3", "score": 0.0, "steps": 0, "duration_seconds": 0.0, "passed": false}
+    {
+      "task_id": "task1",
+      "score": 0.99,
+      "passed": true,
+      "steps": 20,
+      "duration_seconds": 33.82097887992859,
+      "total_reward": 2.999999999999999,
+      "error": null
+    },
+    {
+      "task_id": "task2",
+      "score": 0.99,
+      "passed": true,
+      "steps": 30,
+      "duration_seconds": 50.850202322006226,
+      "total_reward": 5.700000000000001,
+      "error": null
+    },
+    {
+      "task_id": "task3",
+      "score": 0.99,
+      "passed": false,
+      "steps": 50,
+      "duration_seconds": 86.36141085624695,
+      "total_reward": 19.599999999999994,
+      "error": null
+    }
   ],
-  "average_score": 0.0,
-  "total_duration_seconds": 0.0
+  "average_score": 0.9899999999999999,
+  "total_duration_seconds": 171.03259205818176
 }

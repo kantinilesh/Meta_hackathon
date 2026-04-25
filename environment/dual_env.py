@@ -35,12 +35,24 @@ class DualAgentEnv:
         self.session.turn += 1
         clause = self.clauses.get(action.clause_id)
         
+        # Use the LLM-generated content field if available, otherwise build a natural default
+        if hasattr(action, 'content') and action.content:
+            message_content = action.content
+        elif action.action_type == "propose" and action.proposed_text:
+            message_content = f"{role.value.capitalize()} Agent proposes a revision to the {clause.title if clause else action.clause_id} clause."
+        elif action.action_type == "accept":
+            message_content = f"{role.value.capitalize()} Agent accepts the current terms for {clause.title if clause else action.clause_id}."
+        elif action.action_type == "reject":
+            message_content = f"{role.value.capitalize()} Agent rejects the current terms for {clause.title if clause else action.clause_id}."
+        else:
+            message_content = f"{role.value.capitalize()} Agent acts on {action.clause_id}."
+        
         turn = NegotiationTurn(
             turn_number=self.session.turn,
-            speaker=f"{role.value}_agent", # seller_agent or client_agent
+            speaker=f"{role.value}_agent",
             action_type=action.action_type,
             clause_id=action.clause_id,
-            content=f"{role.value.capitalize()} proposed redline." if action.action_type == "propose" else f"{role.value.capitalize()} {action.action_type}s.",
+            content=message_content,
             proposed_text=action.proposed_text,
             internal_reasoning=action.internal_reasoning,
             is_visible_to_both=True
@@ -52,13 +64,15 @@ class DualAgentEnv:
             clause.status = "in_negotiation"
         elif action.action_type == "accept":
             clause.status = "agreed"
-            self.session.final_agreed_clauses[action.clause_id] = clause.current_proposed_text
+            # Store the agreed text: prefer current_proposed_text, fallback to original
+            agreed_text = clause.current_proposed_text if clause.current_proposed_text else clause.text
+            self.session.final_agreed_clauses[action.clause_id] = agreed_text
             self.session.negotiation_history.append(NegotiationTurn(
                 turn_number=self.session.turn,
                 speaker="system",
                 action_type="accept",
                 clause_id=action.clause_id,
-                content=f"Agreement reached on Clause {action.clause_id} ✓",
+                content=f"✅ Agreement reached on '{clause.title if clause else action.clause_id}'",
             ))
             
         done = self.is_complete()

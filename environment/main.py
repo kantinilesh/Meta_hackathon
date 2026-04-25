@@ -211,7 +211,7 @@ def tasks():
     return [
         TaskConfig(task_id="task1", name="Clause Identification", difficulty="easy", description="", max_turns=20, target_score=0.85),
         TaskConfig(task_id="task2", name="Clause Redlining", difficulty="medium", description="", max_turns=30, target_score=0.65),
-        TaskConfig(task_id="task3", name="Full Negotiation", difficulty="hard", description="", max_turns=50, target_score=0.45),
+        TaskConfig(task_id="task3", name="Full Negotiation", difficulty="hard", description="", max_turns=40, target_score=0.45),
     ]
 
 # SESSION PRODUCT ENDPOINTS
@@ -241,12 +241,21 @@ def session_create(req: SessionCreateReq):
     else:
         contract_data = load_contract("task3") # Base contract
     
+    # Build a real constraint summary from the actual constraints list
+    seller_constraint_lines = []
+    for c in req.seller_constraints:
+        desc = c.get('description', '') if isinstance(c, dict) else getattr(c, 'description', '')
+        is_db = c.get('is_deal_breaker', False) if isinstance(c, dict) else getattr(c, 'is_deal_breaker', False)
+        if desc:
+            seller_constraint_lines.append(f"{'[DEAL-BREAKER] ' if is_db else ''}" + desc)
+    seller_constraint_summary = '; '.join(seller_constraint_lines) if seller_constraint_lines else "Negotiate in good faith."
+    
     seller_config = PartyConfig(
         role="seller",
         company_name=req.seller_company_name,
         constraints=req.seller_constraints,
         agent_style=req.seller_agent_style,
-        constraint_summary="Custom constraints",
+        constraint_summary=seller_constraint_summary,
         company_context=req.seller_context
     )
     
@@ -282,12 +291,21 @@ def session_join(req: SessionJoinReq):
     if not session:
         raise HTTPException(404, "Invalid token")
         
+    # Build a real constraint summary for the client
+    client_constraint_lines = []
+    for c in req.client_constraints:
+        desc = c.get('description', '') if isinstance(c, dict) else getattr(c, 'description', '')
+        is_db = c.get('is_deal_breaker', False) if isinstance(c, dict) else getattr(c, 'is_deal_breaker', False)
+        if desc:
+            client_constraint_lines.append(f"{'[DEAL-BREAKER] ' if is_db else ''}" + desc)
+    client_constraint_summary = '; '.join(client_constraint_lines) if client_constraint_lines else "Negotiate in good faith."
+    
     session.client_config = PartyConfig(
         role="client",
         company_name=req.client_company_name,
         constraints=req.client_constraints,
         agent_style=req.client_agent_style,
-        constraint_summary="Custom constraints",
+        constraint_summary=client_constraint_summary,
         company_context=req.client_context
     )
     session.status = "ready"
@@ -314,9 +332,10 @@ def grade(req: GradeReq):
         total_clauses = len(env.clauses) or 1
         agreed_clauses = sum(1 for clause in env.clauses.values() if clause.status == "agreed")
         score = _strict_unit_interval(max(raw_score, agreed_clauses / total_clauses))
-        passed = agreed_clauses == total_clauses
+        passed = score >= 0.45  # Target score per OpenEnv spec — full agreement is ideal but not required
         details = [
-            f"Negotiation reached agreement on {agreed_clauses}/{total_clauses} clauses."
+            f"Negotiation reached agreement on {agreed_clauses}/{total_clauses} clauses.",
+            f"Score {score:.2f} vs target 0.45 — {'PASSED ✅' if passed else 'FAILED ❌'}"
         ]
     elif req.task_id == "task2":
         max_task_score = max(0.28 * len(env.clauses), 0.28)

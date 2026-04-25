@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useNegotiationSocket } from '@/hooks/useNegotiationSocket'
 import { api } from '@/lib/api'
 import { InterventionModal } from '@/components/session/InterventionModal'
@@ -111,7 +111,8 @@ function TypingDots({ speaker }: { speaker: string }) {
 /* ── Main Page ── */
 export default function SessionRoom({ params }: { params: { sessionId: string } }) {
   const router = useRouter()
-  const role = 'seller'
+  const searchParams = useSearchParams()
+  const role = (searchParams.get('role') as 'seller' | 'client') || 'seller'
 
   const { turns, isConnected, isComplete } = useNegotiationSocket(params.sessionId, role)
   const [sessionData, setSessionData] = useState<NegotiationSession | null>(null)

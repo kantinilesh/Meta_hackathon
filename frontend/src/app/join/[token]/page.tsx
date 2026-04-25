@@ -51,7 +51,7 @@ export default function ClientJoin({ params }: { params: { token: string } }) {
           const { data } = await api.session.status(undefined, params.token)
           if (data.status === 'negotiating') {
             clearInterval(interval)
-            router.push(`/session/${data.session_id}`)
+            router.push(`/session/${data.session_id}?role=client`)
           }
         } catch(e) {}
       }, 3000)

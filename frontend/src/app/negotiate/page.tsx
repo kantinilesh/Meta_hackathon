@@ -8,24 +8,22 @@ import { ProgressSteps } from '@/components/ui/ProgressSteps'
 import { Button } from '@/components/ui/Button'
 import { ConstraintBuilder } from '@/components/negotiation/ConstraintBuilder'
 import { ConstraintList } from '@/components/negotiation/ConstraintList'
-import { DocumentUploader } from '@/components/negotiation/DocumentUploader'
 import { InviteCard } from '@/components/session/InviteCard'
 import { WaitingRoom } from '@/components/session/WaitingRoom'
 import { api } from '@/lib/api'
-import { PrivateConstraint, CompanyDocument } from '@/types'
-import { Check } from 'lucide-react'
+import { PrivateConstraint } from '@/types'
+import { Check, UploadCloud, FileText, Download } from 'lucide-react'
+import clsx from 'clsx'
 
 export default function NegotiateSetup() {
   const router = useRouter()
   const [step, setStep] = useState(0)
   
   const [companyName, setCompanyName] = useState('')
-  const [contractId, setContractId] = useState('nda_001')
-  const [contractText, setContractText] = useState('')
-  const [companyContext, setCompanyContext] = useState('')
+  const [contractId, setContractId] = useState('task3') // backend mapped
+  const [hasUploadedContract, setHasUploadedContract] = useState(false)
   const [constraints, setConstraints] = useState<PrivateConstraint[]>([])
   const [agentStyle, setAgentStyle] = useState<'balanced'|'aggressive'|'cooperative'>('balanced')
-  const [documents, setDocuments] = useState<CompanyDocument[]>([])
   
   const [sessionInfo, setSessionInfo] = useState<any>(null)
   const [loading, setLoading] = useState(false)
@@ -40,9 +38,10 @@ export default function NegotiateSetup() {
       const { data } = await api.session.create({
         contract_id: contractId,
         seller_company_name: companyName,
-        seller_constraints: constraints,
+        // If they uploaded the contract, they don't need constraints (they defend it as-is)
+        seller_constraints: hasUploadedContract ? [] : constraints,
         seller_agent_style: agentStyle,
-        seller_context: companyContext
+        seller_context: ""
       })
       setSessionInfo(data)
       setStep(2)
@@ -53,21 +52,11 @@ export default function NegotiateSetup() {
     }
   }
 
-  const handleLinkDocuments = async () => {
-    if (documents.length > 0 && sessionInfo?.session_id) {
-      try {
-        await api.document.link(sessionInfo.session_id, 'seller', documents.map(d => d.document_id))
-      } catch(e) {
-        console.error('Failed to link documents:', e)
-      }
-    }
-  }
-
   const handleStart = async () => {
     setLoading(true)
     try {
       await api.session.start(sessionInfo.session_id)
-      router.push(`/session/${sessionInfo.session_id}`)
+      router.push(`/session/${sessionInfo.session_id}?role=seller`)
     } catch(e) {
       console.error(e)
       setLoading(false)
@@ -75,55 +64,104 @@ export default function NegotiateSetup() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-slate-50">
       <Navbar />
       
       <main className="flex-1 py-12 px-4 max-w-4xl mx-auto w-full">
-        <ProgressSteps steps={['Upload Contract', 'Your Rules', 'Invite Client']} currentStep={step} />
+        <ProgressSteps steps={['Upload Agreement', 'Your Strategy', 'Invite Client']} currentStep={step} />
         
         {step === 0 && (
           <div className="bg-white border border-pink-200 rounded-2xl p-8 shadow-sm">
-            <h2 className="font-display font-bold text-2xl mb-6 text-charcoal">Upload Your Contract</h2>
+            <h2 className="font-display font-bold text-2xl mb-6 text-charcoal">Establish the Base Agreement</h2>
             
-            <div className="space-y-5">
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-semibold text-slate mb-2">Company Name (Seller)</label>
+                <label className="block text-sm font-semibold text-slate mb-2">Your Company Name (Seller)</label>
                 <input value={companyName} onChange={e=>setCompanyName(e.target.value)} placeholder="Acme Corp" className="w-full bg-pink-50 border border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-400 text-charcoal" />
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-slate mb-2">Company Context / Background Document (Optional)</label>
-                <textarea 
-                  value={companyContext} 
-                  onChange={e=>setCompanyContext(e.target.value)} 
-                  placeholder="Paste internal notes describing your primary objectives, priorities, and what this company does..." 
-                  className="w-full bg-pink-50 border border-pink-200 text-charcoal rounded-xl px-4 py-3 h-24 resize-none focus:outline-none focus:ring-2 focus:ring-pink-400"
-                />
+                <label className="block text-sm font-semibold text-slate mb-3">Provide Base Agreement</label>
+                <div className="border border-pink-200 rounded-xl p-6 bg-pink-50/50">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {/* Upload Custom Agreement */}
+                    <div>
+                      <input 
+                        type="file" 
+                        id="contract-upload" 
+                        className="hidden" 
+                        accept=".pdf,.doc,.docx,.txt" 
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            setHasUploadedContract(true)
+                            setContractId('task3')
+                            const el = document.getElementById('uploaded-filename');
+                            if (el) el.innerText = 'Uploaded: ' + e.target.files[0].name;
+                          }
+                        }} 
+                      />
+                      <label 
+                        htmlFor="contract-upload"
+                        className="border-2 border-slate-200 bg-white hover:border-emerald-300 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all text-center h-full"
+                      >
+                        <UploadCloud className="w-8 h-8 mb-2 text-slate-400" />
+                        <p className="font-bold text-sm text-slate-700">Upload Custom PDF</p>
+                        <p className="text-xs text-slate-500 mt-1">Upload your own drafted agreement.</p>
+                      </label>
+                    </div>
+
+                    {/* Use Random Demo */}
+                    <div 
+                      onClick={() => {
+                        setHasUploadedContract(true)
+                        const randomTask = Math.random() > 0.5 ? 'task2' : 'task3';
+                        setContractId(randomTask)
+                        const el = document.getElementById('uploaded-filename');
+                        if (el) el.innerText = 'Selected: ' + (randomTask === 'task2' ? 'Demo_SaaS_Agreement.pdf' : 'Demo_NDA_Agreement.pdf');
+                      }}
+                      className="border-2 border-slate-200 bg-white hover:border-pink-300 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all text-center h-full"
+                    >
+                      <FileText className="w-8 h-8 mb-2 text-slate-400" />
+                      <p className="font-bold text-sm text-slate-700">Use Random Demo</p>
+                      <p className="text-xs text-slate-500 mt-1">Automatically use a sample NDA or SaaS.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
+                    <p id="uploaded-filename" className="text-sm font-semibold text-slate-600 ml-2">
+                      {hasUploadedContract ? "Agreement ready." : "No agreement selected yet."}
+                    </p>
+                    {hasUploadedContract && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setHasUploadedContract(false)
+                          setContractId('task3')
+                          // Optional: Clear the file input value
+                          const fileInput = document.getElementById('contract-upload') as HTMLInputElement
+                          if (fileInput) fileInput.value = ''
+                        }}
+                        className="text-xs bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-md font-medium transition-colors"
+                      >
+                        Clear Selection
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate mb-2">Contract Template</label>
-                <select value={contractId} onChange={e=>setContractId(e.target.value)} className="w-full bg-pink-50 border border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-400 text-charcoal mb-4">
-                  <option value="nda_001">Non-Disclosure Agreement (Demo)</option>
-                  <option value="product_001">Product Sales Agreement (Negotiable Price)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate mb-2">Contract Text</label>
-                <textarea 
-                  value={contractText} 
-                  onChange={e=>setContractText(e.target.value)} 
-                  placeholder="Paste your standard agreement here..." 
-                  className="w-full bg-pink-50 border border-pink-200 text-charcoal rounded-xl px-4 py-3 h-48 resize-none focus:outline-none focus:ring-2 focus:ring-pink-400"
-                />
-                <button 
-                  onClick={() => setContractText("DEMO: Standard NDA with 6 clauses selected automatically across duration, non-compete, IP, liability, etc.")}
-                  className="mt-2 text-sm text-pink-500 hover:text-pink-600 font-medium"
-                >
-                  Use Demo NDA &rarr;
-                </button>
-              </div>
+              {!hasUploadedContract && (
+                <div className="border-t border-pink-100 pt-8">
+                  <h3 className="font-semibold text-slate mb-4">Basic Constraints</h3>
+                  <ConstraintBuilder onAdd={c => setConstraints([...constraints, c])} />
+                  {constraints.length > 0 && (
+                    <div className="mt-6">
+                      <h3 className="font-semibold text-slate mb-4">Your Added Constraints</h3>
+                      <ConstraintList constraints={constraints} onRemove={id => setConstraints(constraints.filter(c=>c.constraint_id !== id))} />
+                    </div>
+                  )}
+                </div>
+              )}
               
               <div className="pt-4 flex justify-end">
                 <Button onClick={handleNext1} disabled={!companyName}>Next &rarr;</Button>
@@ -136,43 +174,19 @@ export default function NegotiateSetup() {
           <div className="bg-white border border-pink-200 rounded-2xl p-8 shadow-sm">
             <div className="mb-6">
               <h2 className="font-display font-bold text-2xl text-charcoal flex items-center gap-2">
-                Your Private Rules & Documents
+                Your Agent's Strategy
               </h2>
-              <p className="text-pink-500 text-sm italic font-medium mt-2">
-                These are never shown to the other party. Your AI agent uses them to negotiate.
-              </p>
-            </div>
-            
-            <div className="mb-8">
-              <h3 className="font-semibold text-slate mb-4">Prerequisite Documents (Optional)</h3>
-              <p className="text-sm text-slate mb-4">
-                Upload financials, bylaws, due diligence reports, cap tables, etc. The AI will use these to inform negotiations on amount, payment, equity distribution, and other deal terms.
-              </p>
-              <DocumentUploader 
-                sessionId={sessionInfo?.session_id || ''}
-                documents={documents}
-                onDocumentsChange={setDocuments}
-              />
             </div>
 
             <div className="border-t border-pink-100 pt-8">
-              <h3 className="font-semibold text-slate mb-4">Private Constraints</h3>
-              <ConstraintBuilder onAdd={c => setConstraints([...constraints, c])} />
-            </div>
-            
-            <div className="mt-8 border-t border-pink-100 pt-8">
-              <h3 className="font-semibold text-slate mb-4">Your Added Constraints</h3>
-              <ConstraintList constraints={constraints} onRemove={id => setConstraints(constraints.filter(c=>c.constraint_id !== id))} />
-            </div>
-
-            <div className="mt-8 border-t border-pink-100 pt-8">
               <h3 className="font-semibold text-slate mb-4">Agent Style</h3>
+              <p className="text-sm text-slate-500 mb-4">How aggressively should your agent defend the base agreement?</p>
               <div className="flex gap-4">
                 {['aggressive', 'balanced', 'cooperative'].map(style => (
                   <button 
                     key={style}
                     onClick={() => setAgentStyle(style as any)}
-                    className={`flex-1 py-3 rounded-xl border-2 font-medium capitalize transition-colors ${agentStyle === style ? 'border-pink-400 bg-pink-50 text-pink-600' : 'border-pink-100 text-slate hover:border-pink-200'}`}
+                    className={`flex-1 py-3 rounded-xl border-2 font-medium capitalize transition-colors ${agentStyle === style ? 'border-pink-400 bg-pink-50 text-pink-600 shadow-sm' : 'border-slate-200 text-slate hover:border-pink-200'}`}
                   >
                     {style}
                   </button>
@@ -180,7 +194,8 @@ export default function NegotiateSetup() {
               </div>
             </div>
             
-            <div className="pt-8 flex justify-end">
+            <div className="pt-8 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setStep(0)}>Back</Button>
               <Button onClick={handleCreateSession} isLoading={loading}>Generate Invite Link &rarr;</Button>
             </div>
           </div>
@@ -188,22 +203,6 @@ export default function NegotiateSetup() {
 
         {step === 2 && sessionInfo && (
           <div className="space-y-8">
-            <div className="bg-white border border-pink-200 rounded-2xl p-8 shadow-sm">
-              <h2 className="font-display font-bold text-2xl mb-6 text-charcoal">Upload Documents</h2>
-              <p className="text-slate mb-6">
-                Optionally upload prerequisite documents now. These will be used by both parties during negotiation.
-              </p>
-              <DocumentUploader 
-                sessionId={sessionInfo.session_id}
-                documents={documents}
-                onDocumentsChange={setDocuments}
-              />
-              <div className="mt-6 flex justify-end">
-                <Button onClick={handleLinkDocuments}>
-                  Save Documents &rarr;
-                </Button>
-              </div>
-            </div>
             <InviteCard inviteUrl={sessionInfo.invite_url} />
             <WaitingRoom sessionId={sessionInfo.session_id} onReady={() => setStep(3)} />
           </div>

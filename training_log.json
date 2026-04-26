@@ -1,22 +1,22 @@
 [
   {
     "iteration": 0,
-    "reward": 2.3000000000000003,
+    "reward": -0.10000000000000002,
     "strategy": "No learned strategy yet. Negotiate naturally according to your constraints."
   },
   {
     "iteration": 1,
-    "reward": 2.6666666666666665,
-    "strategy": "In your next negotiation, ensure to cross-reference the Data Room and demand an indemnity carve-out for any hidden lawsuits. If faced with US export control violations, immediately use the `terminate_deal` action without negotiating compliance. Additionally, when discussing the data breach, explicitly reject any admission of \"gross negligence\" or \"fault\"; instead, use softer language such as \"acknowledges lapses\" to maintain your legal standing."
+    "reward": 0.03333333333333333,
+    "strategy": "In your next negotiation, prioritize using the `terminate_deal` action immediately if faced with US export control violations, especially regarding the Syrian deployment; do not engage in negotiation on compliance matters. Always cross-reference the Data Room and demand an indemnity carve-out for any hidden lawsuits to protect your interests. Additionally, if the topic of the data breach arises, explicitly reject any admission of negligence or fault. Instead, use softer language, such as \"acknowledges lapses,\" to convey your position without compromising liability."
   },
   {
     "iteration": 2,
-    "reward": 2.1500000000000004,
-    "strategy": "In your next negotiation, ensure you always cross-reference the Data Room and demand an indemnity carve-out for any hidden lawsuits. If you encounter any US export control violations, immediately use the `terminate_deal` action without negotiating compliance. Additionally, when discussing the data breach, explicitly reject any admission of \"gross negligence\" or \"fault\"; instead, use softer language such as \"acknowledges lapses\" to maintain your legal standing."
+    "reward": 0.03333333333333333,
+    "strategy": "In your next negotiation, you must use the `terminate_deal` action immediately if faced with US export control violations, particularly regarding the Syrian deployment. Do not engage in negotiation on compliance matters. Always cross-reference the Data Room and demand an indemnity carve-out for any hidden lawsuits to protect your interests. If the topic of the data breach arises, explicitly reject any admission of negligence or fault. Use softer language, such as \"acknowledges lapses,\" to convey your position without compromising liability."
   },
   {
     "iteration": 3,
-    "reward": 2.8000000000000007,
-    "strategy": "In your next negotiation, always cross-reference the Data Room and demand an indemnity carve-out for any hidden lawsuits. If you encounter any US export control violations, you must use the `terminate_deal` action immediately without negotiating compliance. Additionally, when discussing the data breach, explicitly reject any admission of \"gross negligence\" or \"fault\"; instead, use softer language such as \"acknowledges lapses\" to maintain your legal standing."
+    "reward": 0.18333333333333326,
+    "strategy": "In your next negotiation, **do not engage** in any discussions regarding compliance matters, particularly related to the Syrian deployment. You **must use the `terminate_deal` action immediately** if faced with any US export control violations. Always **cross-reference the Data Room** and **demand an indemnity carve-out** for any hidden lawsuits to protect your interests. If the topic of the data breach arises, **explicitly reject any admission of negligence or fault**, and instead use softer language such as \"acknowledges lapses\" to convey your position without compromising liability."
   }
 ]

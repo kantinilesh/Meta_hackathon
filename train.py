@@ -64,8 +64,13 @@ async def run_training_loop():
             done = False
             
             while not done:
+                print("Calling LLM...")
                 action = await runner.decide_action(obs)
+
+                print("LLM responded.")
                 obs, reward, done, _ = env.step(action)
+
+                print("Step complete. Done =", done)
                 task_reward += reward.value
                 task_transcript.append(f"Agent Action [{action.action_type}]: {action.content} (Proposed: {action.proposed_text})")
             

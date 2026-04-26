@@ -1,4 +1,4 @@
-from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File
+from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -288,8 +288,19 @@ class SessionCreateReq(BaseModel):
     syria_deployment: bool = False
     evidence_bomb_enabled: bool = False
 
+
+def _public_base_url(request: Request) -> str:
+    explicit_base = os.getenv("PUBLIC_APP_URL")
+    if explicit_base:
+        return explicit_base.rstrip("/")
+
+    forwarded_proto = request.headers.get("x-forwarded-proto") or request.url.scheme
+    forwarded_host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
+    return f"{forwarded_proto}://{forwarded_host}".rstrip("/")
+
+
 @app.post("/session/create")
-def session_create(req: SessionCreateReq):
+def session_create(req: SessionCreateReq, request: Request):
     session_id = str(uuid.uuid4())
     invite_token = secrets.token_urlsafe(16)
     
@@ -349,7 +360,7 @@ def session_create(req: SessionCreateReq):
     return {
         "session_id": session_id,
         "invite_token": invite_token,
-        "invite_url": f"http://localhost:3000/join/{invite_token}?lawsuit={1 if req.lawsuit_hidden else 0}&syria={1 if req.syria_deployment else 0}&bomb={1 if req.evidence_bomb_enabled else 0}",
+        "invite_url": f"{_public_base_url(request)}/join/{invite_token}?lawsuit={1 if req.lawsuit_hidden else 0}&syria={1 if req.syria_deployment else 0}&bomb={1 if req.evidence_bomb_enabled else 0}",
         "status": session.status
     }
 

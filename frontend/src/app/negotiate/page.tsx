@@ -21,6 +21,7 @@ const DEAL_META = {
 export default function NegotiateSetup() {
   const router = useRouter()
   const [step, setStep] = useState(0)
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || '/api'
 
   const [companyName, setCompanyName] = useState('')
   const [agentStyle, setAgentStyle] = useState<'balanced' | 'aggressive' | 'cooperative'>('balanced')
@@ -44,7 +45,7 @@ export default function NegotiateSetup() {
       syria_deployment: syriaTrap.toString(),
       evidence_bomb: evidenceBomb.toString()
     })
-    fetch(`http://localhost:7860/tasks/master/constraints?${params.toString()}`)
+    fetch(`${apiBase}/tasks/master/constraints?${params.toString()}`)
       .then(r => r.json())
       .then(data => {
         if (data.constraints) {
@@ -55,7 +56,7 @@ export default function NegotiateSetup() {
         console.error("Failed to fetch constraints:", e)
         setConstraints([])
       })
-  }, [lawsuitHidden, syriaTrap, evidenceBomb])
+  }, [apiBase, lawsuitHidden, syriaTrap, evidenceBomb])
 
   const handleAddConstraint = () => {
     if (!newConstraint.trim()) return

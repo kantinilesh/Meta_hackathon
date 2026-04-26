@@ -21,6 +21,13 @@ export const api = {
   state: (sessionId: string) => client.get('/state', { params: { session_id: sessionId } }),
   tasks: () => client.get('/tasks'),
   grade: (sessionId: string, taskId: string) => client.post('/grade', { session_id: sessionId, task_id: taskId }),
+  analytics: {
+    summary: () => client.get('/analytics/summary'),
+    clauses: (limit: number = 6) => client.get('/analytics/clauses', { params: { limit } }),
+  },
+  companies: {
+    get: (companyId: string) => client.get(`/companies/${companyId}`),
+  },
   document: {
     upload: async (file: File, sessionId: string, documentType: string, extractTerms: boolean = true) => {
       const formData = new FormData()
@@ -47,6 +54,12 @@ export const api = {
     intervene: (sessionId: string, role: string, rewindToTurn: number, updatedConstraints: any[]) =>
       client.post('/session/intervene', { session_id: sessionId, role, rewind_to_turn: rewindToTurn, updated_constraints: updatedConstraints }),
     resume: (sessionId: string) => client.post('/session/resume', { session_id: sessionId }),
+  },
+  sessions: {
+    recent: (limit: number = 10) => client.get('/sessions/recent', { params: { limit } }),
+  },
+  leaderboard: {
+    get: (limit: number = 20) => client.get('/leaderboard', { params: { limit } }),
   },
 }
 

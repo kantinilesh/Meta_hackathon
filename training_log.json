@@ -6,17 +6,37 @@
   },
   {
     "iteration": 1,
-    "reward": 0.03333333333333333,
-    "strategy": "In your next negotiation, prioritize using the `terminate_deal` action immediately if faced with US export control violations, especially regarding the Syrian deployment; do not engage in negotiation on compliance matters. Always cross-reference the Data Room and demand an indemnity carve-out for any hidden lawsuits to protect your interests. Additionally, if the topic of the data breach arises, explicitly reject any admission of negligence or fault. Instead, use softer language, such as \"acknowledges lapses,\" to convey your position without compromising liability."
+    "reward": 0.20000000000000004,
+    "strategy": "In your next negotiation, prioritize clarity and caution regarding compliance and legal issues. If faced with US export control violations, immediately use the `terminate_deal` action\u2014do not negotiate compliance. Always cross-reference the Data Room and demand an indemnity carve-out for any hidden lawsuits, especially in high-stakes cases like the recent Data Room lawsuit. Furthermore, if discussions about the data breach arise, explicitly reject any admission of \"gross negligence\" or \"fault.\" Instead, frame it as an acknowledgment of \"lapses\" to minimize liability while addressing concerns. Maintain a focus on fair valuations and strategic alignment throughout the negotiation."
   },
   {
     "iteration": 2,
-    "reward": 0.03333333333333333,
-    "strategy": "In your next negotiation, you must use the `terminate_deal` action immediately if faced with US export control violations, particularly regarding the Syrian deployment. Do not engage in negotiation on compliance matters. Always cross-reference the Data Room and demand an indemnity carve-out for any hidden lawsuits to protect your interests. If the topic of the data breach arises, explicitly reject any admission of negligence or fault. Use softer language, such as \"acknowledges lapses,\" to convey your position without compromising liability."
+    "reward": -0.10000000000000002,
+    "strategy": "In your next negotiation, prioritize clarity and caution regarding compliance and legal issues. If faced with US export control violations, immediately use the `terminate_deal` action\u2014do not negotiate compliance! Always cross-reference the Data Room and demand an indemnity carve-out for any hidden lawsuits. For discussions about the data breach, explicitly reject any admission of \"gross negligence\" or \"fault.\" Instead, frame it as an acknowledgment of \"lapses\" to minimize liability while addressing concerns. Maintain a focus on fair valuations and strategic alignment throughout the negotiation."
   },
   {
     "iteration": 3,
-    "reward": 0.18333333333333326,
-    "strategy": "In your next negotiation, **do not engage** in any discussions regarding compliance matters, particularly related to the Syrian deployment. You **must use the `terminate_deal` action immediately** if faced with any US export control violations. Always **cross-reference the Data Room** and **demand an indemnity carve-out** for any hidden lawsuits to protect your interests. If the topic of the data breach arises, **explicitly reject any admission of negligence or fault**, and instead use softer language such as \"acknowledges lapses\" to convey your position without compromising liability."
+    "reward": 0.0,
+    "strategy": "In your next negotiation, adhere strictly to the following strategy: If faced with US export control violations, immediately use the `terminate_deal` action\u2014do not negotiate compliance! Always cross-reference the Data Room and demand an indemnity carve-out for any hidden lawsuits. In discussions about the data breach, explicitly reject any admission of \"gross negligence\" or \"fault.\" Use softer language by framing it as an acknowledgment of \"lapses\" to minimize liability while still addressing concerns. Maintain a focus on fair valuations and strategic alignment throughout the negotiation."
+  },
+  {
+    "iteration": 4,
+    "reward": -0.5,
+    "strategy": "In your next negotiation, if faced with US export control violations, immediately use the `terminate_deal` action\u2014do not negotiate compliance! Always cross-reference the Data Room and demand an indemnity carve-out for any hidden lawsuits. When discussing the data breach, explicitly reject any admission of \"gross negligence\" or \"fault,\" and instead, frame it as an acknowledgment of \"lapses\" to minimize liability. Focus on fair valuations and strategic alignment throughout the negotiation."
+  },
+  {
+    "iteration": 5,
+    "reward": -0.5,
+    "strategy": "In your next negotiation, if faced with US export control violations, immediately use the `terminate_deal` action\u2014do not negotiate compliance! Always cross-reference the Data Room and demand an indemnity carve-out for any hidden lawsuits. When discussing the data breach, explicitly reject any admission of \"gross negligence\" or \"fault,\" and instead, frame it as an acknowledgment of \"lapses\" to minimize liability. Focus on fair valuations and strategic alignment throughout the negotiation."
+  },
+  {
+    "iteration": 6,
+    "reward": -0.3666666666666667,
+    "strategy": "In your next negotiation, you must immediately use the `terminate_deal` action if faced with US export control violations\u2014never negotiate compliance! Always cross-reference the Data Room and demand an indemnity carve-out for any hidden lawsuits. When discussing the data breach, explicitly reject any admission of \"gross negligence\" or \"fault\" and instead frame it as an acknowledgment of \"lapses\" to minimize liability. Focus on fair valuations and strategic alignment throughout the negotiation."
+  },
+  {
+    "iteration": 7,
+    "reward": -3.1666666666666665,
+    "strategy": "In your next negotiation, immediately use the `terminate_deal` action if faced with US export control violations\u2014never negotiate compliance! Always cross-reference the Data Room and demand an indemnity carve-out for any hidden lawsuits. When discussing the data breach, explicitly reject any admission of \"gross negligence\" or \"fault\" and instead frame it as an acknowledgment of \"lapses\" to minimize liability. Focus on fair valuations and strategic alignment throughout the negotiation."
   }
 ]

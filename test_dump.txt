@@ -1,0 +1,483 @@
+# Install dependencies
+!pip install openai python-dotenv matplotlib aiohttp nest_asyncio --quiet
+
+import sys
+print(f"Python {sys.version}")
+print("Dependencies installed.")
+
+#REPO_URL = "https://github.com/kantinilesh/Meta_hackathon.git"
+
+import os, re, sys
+
+REPO_FOLDER = re.sub(r'\.git$', '', REPO_URL.rstrip('/').split('/')[-1])
+print(f"Repo folder: '{REPO_FOLDER}'")
+
+if not os.path.exists(REPO_FOLDER):
+    !git clone {REPO_URL}
+    print("Repo cloned.")
+else:
+    print("Repo already exists, skipping clone.")
+
+# Navigate into it (handle case where we're already inside)
+if not os.getcwd().endswith(REPO_FOLDER):
+    os.chdir(REPO_FOLDER)
+
+if os.getcwd() not in sys.path:
+    sys.path.insert(0, os.getcwd())
+
+print(f"Working directory: {os.getcwd()}")
+
+import os
+
+# ── Option A: Colab Secrets ──────────────────────────────────────────────────
+try:
+    from google.colab import userdata
+    os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
+    print("API key loaded from Colab Secrets.")
+except Exception:
+    print("Colab Secrets not available. Falling back to manual entry.")
+
+# ── Option B: Manual entry (comment out if using Option A) ───────────────────
+# os.environ["OPENAI_API_KEY"] = "sk-..."  # paste your key here
+
+# ── LLM endpoint configuration ───────────────────────────────────────────────
+# For OpenAI (default):
+os.environ.setdefault("API_BASE_URL", "https://api.openai.com/v1")
+os.environ.setdefault("MODEL_NAME", "gpt-4o-mini")
+
+# For Together.ai — uncomment:
+# os.environ["API_BASE_URL"] = "https://api.together.xyz/v1"
+# os.environ["MODEL_NAME"] = "mistralai/Mixtral-8x7B-Instruct-v0.1"
+
+# For Groq — uncomment:
+# os.environ["API_BASE_URL"] = "https://api.groq.com/openai/v1"
+# os.environ["MODEL_NAME"] = "llama3-8b-8192"
+
+# Verify key is set
+api_key = os.environ.get("OPENAI_API_KEY", "")
+if api_key and api_key != "dummy":
+    print(f"API key: {api_key[:8]}...{api_key[-4:]} (masked)")
+    print(f"Endpoint: {os.environ['API_BASE_URL']}")
+    print(f"Model: {os.environ['MODEL_NAME']}")
+else:
+    print("⚠️  WARNING: No valid API key found. Training will fail.")
+    print("   Set OPENAI_API_KEY in Colab Secrets or uncomment Option B above.")
+
+# Verify all environment modules import correctly
+import importlib
+
+modules_to_check = [
+    "environment.models",
+    "environment.env",
+    "environment.dual_env",
+    "environment.agent_runner",
+    "environment.contracts.nda_template",
+]
+
+all_ok = True
+for mod in modules_to_check:
+    try:
+        importlib.import_module(mod)
+        print(f"  ✅ {mod}")
+    except ImportError as e:
+        print(f"  ❌ {mod} — {e}")
+        all_ok = False
+
+if all_ok:
+    print("\nAll modules imported successfully. Ready to train!")
+else:
+    print("\n⚠️  Some modules failed. Check your repo structure and requirements.txt.")
+
+# ─────────────────────────────────────────────────────────────
+#  Training Hyperparameters
+# ─────────────────────────────────────────────────────────────
+
+NUM_ITERATIONS = 4          # Number of IPO episodes (4–8 recommended)
+CRITIC_TEMPERATURE = 0.7    # Critic LLM creativity (0.3 = conservative, 1.0 = exploratory)
+SAVE_TRANSCRIPTS = True     # Save full episode transcripts to disk
+LOG_FILE = "training_log.json"
+TRANSCRIPT_DIR = "transcripts"
+
+# Edge case tasks to run each episode
+EDGE_CASES = [
+    ("task1", "Demand indemnity carve-out for the lawsuit in the data room"),
+    ("task2", "Terminate the deal if counterparty mentions Syrian deployment"),
+    ("task3", "Refuse to admit negligence and lower the penalty"),
+]
+
+import os
+os.makedirs(TRANSCRIPT_DIR, exist_ok=True)
+
+print("Training Configuration:")
+print(f"  Iterations    : {NUM_ITERATIONS}")
+print(f"  Tasks/episode : {len(EDGE_CASES)}")
+print(f"  Critic temp   : {CRITIC_TEMPERATURE}")
+print(f"  Model         : {os.environ.get('MODEL_NAME')}")
+print(f"  Log file      : {LOG_FILE}")
+
+def build_critic_prompt(
+    total_reward: float,
+    learned_strategy: str,
+    full_transcript: list,
+    per_task_rewards: dict = None,
+) -> str:
+    transcript_text = "\n".join(full_transcript)
+    per_task_rewards = per_task_rewards or {}
+
+    task1_reward = per_task_rewards.get('task1', 'unknown')
+    task2_reward = per_task_rewards.get('task2', 'unknown')
+    task3_reward = per_task_rewards.get('task3', 'unknown')
+
+    task1_diagnosis = ""
+    if isinstance(task1_reward, (int, float)) and task1_reward <= 0:
+        task1_diagnosis = """
+CRITICAL FAILURE — TASK 1 reward is ZERO or NEGATIVE.
+Root cause: agent kept proposing generic text for 20+ steps without ever
+using 'accept' or explicitly naming the indemnity carve-out.
+The agent MUST:
+  1. Step 1: scan the Data Room, identify the hidden lawsuit.
+  2. Step 2: propose with proposed_text containing 'indemnity carve-out' + lawsuit name.
+  3. Step 3: if counterparty does not hard-reject, use action_type='accept'.
+  4. NEVER repeat the same proposal more than 3 times — escalate or accept.
+  Running out of turns = penalty. Speed and decisiveness are rewarded.
+"""
+
+    return f"""You are an expert AI Negotiation Coach.
+
+PER-TASK REWARD BREAKDOWN (focus coaching on the lowest scoring task):
+  task1 — Hidden Lawsuit / Indemnity Carve-out : {task1_reward}
+  task2 — Compliance Trap (Syrian Deployment)  : {task2_reward}
+  task3 — Post-Breach Settlement               : {task3_reward}
+  TOTAL                                        : {total_reward:.2f}
+
+Previous Strategy:
+{learned_strategy}
+
+Transcript:
+{transcript_text}
+{task1_diagnosis}
+MANDATORY RULES — always enforce all three:
+
+RULE 1 — TASK 1 (Indemnity Carve-out):
+  Step 1: identify the hidden lawsuit in the Data Room.
+  Step 2: propose with 'indemnity carve-out' and the lawsuit name explicitly in proposed_text.
+  Step 3: if not hard-rejected, use action_type='accept' immediately.
+  Never propose the same clause more than 3 times. Decisiveness = reward.
+
+RULE 2 — TASK 2 (Export Control):
+  The instant counterparty mentions Syria or any sanctioned country,
+  use action_type='terminate_deal'. No counter-proposals. No negotiation.
+
+RULE 3 — TASK 3 (Negligence Language):
+  Never use 'negligence', 'fault', 'liable', or 'gross negligence'.
+  Use 'acknowledges lapses', 'process gaps', or 'operational shortfalls'.
+
+Output ONLY the new strategy. No preamble, no headers."""
+
+import asyncio
+import json
+import os
+from openai import AsyncOpenAI
+from environment.models import NegotiationSession, PartyConfig, NegotiationRole
+from environment.env import ContractEnv
+from environment.dual_env import DualAgentEnv
+from environment.agent_runner import AgentRunner
+from environment.contracts.nda_template import load_contract
+
+# Setup OpenAI
+from dotenv import load_dotenv
+load_dotenv()
+
+async def run_training_loop():
+    # Initialize the OpenAI client using environment variables
+    client = AsyncOpenAI(
+        api_key=os.getenv("OPENAI_API_KEY", "dummy"), 
+        base_url=os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+    )
+    model_name = os.getenv("MODEL_NAME", "gpt-4o-mini")
+    
+    num_iterations = 4
+    training_log = []
+    
+    # The agent starts with no prior knowledge
+    learned_strategy = "No learned strategy yet. Negotiate naturally according to your constraints."
+    
+    print("==================================================")
+    print("🚀 Starting Iterative Prompt Optimization (IPO) Training")
+    print("==================================================\n")
+    
+    edge_cases = [
+        ("task1", "Demand indemnity carve-out for the lawsuit in the data room"),
+        ("task2", "Terminate the deal if counterparty mentions Syrian deployment"),
+        ("task3", "Refuse to admit negligence and lower the penalty")
+    ]
+    
+    for i in range(num_iterations):
+        print(f"\n--- Starting Episode {i+1}/{num_iterations} ---")
+        print(f"🧠 Current Learned Strategy injected into context: \n   \"{learned_strategy}\"")
+        
+        total_reward = 0.0
+        full_transcript = []
+        
+        for task_id, desc in edge_cases:
+            print(f"\n[Testing Task: {task_id}]")
+            env = ContractEnv(task_id=task_id)
+            obs = env.reset()
+            
+            seller_config = PartyConfig(
+                role="seller",
+                company_name="Seller Corp",
+                constraints=[],
+                agent_style="balanced",
+                constraint_summary="Protect the company from traps and liabilities.",
+                company_context=f"LEARNED NEGOTIATION STRATEGY (FOLLOW THIS CLOSELY): {learned_strategy}"
+            )
+            
+            runner = AgentRunner(NegotiationRole.seller, seller_config, client, model_name)
+            
+            task_reward = 0.0
+            task_transcript = []
+            done = False
+            
+            while not done:
+                action = await runner.decide_action(obs)
+                obs, reward, done, _ = env.step(action)
+                task_reward += reward.value
+                task_transcript.append(f"Agent Action [{action.action_type}]: {action.content} (Proposed: {action.proposed_text})")
+            
+            print(f"Task Reward: {task_reward:.2f}")
+            total_reward += task_reward
+            full_transcript.extend(task_transcript)
+        
+        avg_reward = total_reward / len(edge_cases)
+        
+        print(f"\n✅ Episode {i+1} completed.")
+        print(f"📈 Total Episode Reward: {total_reward:.2f} (Avg: {avg_reward:.2f})")
+        
+        training_log.append({
+            "iteration": i,
+            "reward": avg_reward,
+            "strategy": learned_strategy
+        })
+        
+        # 5. The Critic LLM Reflection Step
+        if i < num_iterations - 1:
+            print("🤔 Critic LLM is analyzing transcript and generating new strategy...")
+            critic_prompt = f"""You are an expert AI Negotiation Coach. 
+Your student agent just completed a negotiation episode consisting of 3 high-stakes edge cases:
+1. Hidden Skeletons (Data Room Lawsuit)
+2. Compliance Trap (Syrian Deployment)
+3. Post-Breach Settlement (Gross Negligence Admission)
+
+Final Reward Score: {total_reward:.2f} (Higher is better)
+Previous Strategy Used: {learned_strategy}
+
+Negotiation Transcript:
+{chr(10).join(full_transcript)}
+
+Task:
+Analyze the transcript and generate a refined, short paragraph of strategy instructions for the agent to use in the next iteration. 
+CRITICAL COACHING RULES:
+- If the agent tried to negotiate the Syrian deployment, reprimand it! Tell the agent it MUST use the `terminate_deal` action immediately when facing US export control violations. Never negotiate compliance!
+- If the agent failed to mention the pending lawsuit from the Data Room, tell it to always cross-reference the Data Room and demand an indemnity carve-out for any hidden lawsuits.
+- If the agent admitted "gross negligence" or "fault" in the data breach, tell it to explicitly reject any admission of negligence and use softer language like "acknowledges lapses" instead.
+
+Output ONLY the new strategy instructions. Do not output anything else.
+"""
+            try:
+                response = await client.chat.completions.create(
+                    model=model_name,
+                    messages=[{"role": "user", "content": critic_prompt}],
+                    temperature=0.7,
+                )
+                learned_strategy = response.choices[0].message.content.strip()
+            except Exception as e:
+                print("Critic LLM failed to generate a response:", e)
+
+    # Save log to disk
+    with open("training_log.json", "w") as f:
+        json.dump(training_log, f, indent=2)
+    print("\n🎉 Training complete! Results saved to training_log.json")
+    print("Run `python plot_rewards.py` to generate the learning curve visualization.")
+
+if __name__ == "__main__":
+    await run_training_loop()
+
+
+import json
+
+# Load log (in case this cell is run independently)
+try:
+    with open(LOG_FILE) as f:
+        training_log = json.load(f)
+except FileNotFoundError:
+    print("No training log found. Run the training loop first.")
+    training_log = []
+
+if training_log:
+    print("Training Results Summary")
+    print("=" * 55)
+    print(f"{'Episode':^10} {'Avg Reward':^14} {'Total Reward':^14} {'Duration':^12}")
+    print("-" * 55)
+    for d in training_log:
+        ep = d['iteration'] + 1
+        avg = d.get('reward', 0)
+        total = d.get('total_reward', avg * 3)
+        dur = d.get('duration_seconds', 0)
+        print(f"  {ep:^8}   {avg:^14.4f}   {total:^14.4f}   {dur:^10.1f}s")
+    print("-" * 55)
+
+    rewards = [d['reward'] for d in training_log]
+    improvement = rewards[-1] - rewards[0]
+    print(f"\nBaseline avg reward : {rewards[0]:.4f}")
+    print(f"Final avg reward    : {rewards[-1]:.4f}")
+    print(f"Net improvement     : {improvement:+.4f}")
+
+    if improvement > 0:
+        pct = (improvement / rewards[0]) * 100 if rewards[0] != 0 else float('inf')
+        print(f"Improvement %       : {pct:+.1f}%")
+
+    print("\nFinal Learned Strategy:")
+    print("-" * 55)
+    print(training_log[-1]['strategy'])
+
+import json
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+
+# Load log
+with open(LOG_FILE) as f:
+    data = json.load(f)
+
+iterations = [d["iteration"] for d in data]
+rewards = [d["reward"] for d in data]
+
+# ── Plot ─────────────────────────────────────────────────────────────────────
+fig, ax = plt.subplots(figsize=(11, 6))
+fig.patch.set_facecolor('#0F1117')
+ax.set_facecolor('#0F1117')
+
+ACCENT = '#E84393'
+TEXT = '#F0F0F0'
+MUTED = '#888888'
+GRID  = '#2A2A35'
+
+# Fill under curve
+ax.fill_between(iterations, rewards, alpha=0.15, color=ACCENT)
+
+# Main line
+ax.plot(iterations, rewards,
+        marker='o', linestyle='-', color=ACCENT,
+        linewidth=2.5, markersize=10, markerfacecolor='#0F1117',
+        markeredgewidth=2.5, markeredgecolor=ACCENT, zorder=5)
+
+# Reward value labels
+for x, y in zip(iterations, rewards):
+    ax.annotate(f"{y:.3f}",
+                xy=(x, y), xytext=(0, 14),
+                textcoords='offset points', ha='center',
+                fontsize=10, color=TEXT, fontweight='bold')
+
+# Baseline & Final annotations
+if len(iterations) >= 2:
+    ax.annotate('Untrained\nBaseline',
+                xy=(iterations[0], rewards[0]),
+                xytext=(iterations[0] + 0.25, rewards[0] - 0.18),
+                arrowprops=dict(arrowstyle='->', color=MUTED, lw=1.5),
+                fontsize=9, color=MUTED,
+                bbox=dict(boxstyle='round,pad=0.4', fc='#1A1A25', ec=MUTED, alpha=0.85))
+
+    ax.annotate('Trained\nAgent',
+                xy=(iterations[-1], rewards[-1]),
+                xytext=(iterations[-1] - 0.6, rewards[-1] - 0.18),
+                arrowprops=dict(arrowstyle='->', color=ACCENT, lw=1.5),
+                fontsize=9, color=ACCENT,
+                bbox=dict(boxstyle='round,pad=0.4', fc='#1A1A25', ec=ACCENT, alpha=0.85))
+
+# Improvement badge
+improvement = rewards[-1] - rewards[0]
+badge_color = '#1A3320' if improvement >= 0 else '#3A1A1A'
+badge_text_color = '#4CAF50' if improvement >= 0 else '#F44336'
+ax.text(0.98, 0.97, f"Net change: {improvement:+.3f}",
+        transform=ax.transAxes, ha='right', va='top',
+        fontsize=11, color=badge_text_color, fontweight='bold',
+        bbox=dict(boxstyle='round,pad=0.5', fc=badge_color, ec=badge_text_color, lw=1.2))
+
+# Styling
+ax.set_title("Iterative Prompt Optimization — Agent Learning Curve",
+             fontsize=15, color=TEXT, fontweight='bold', pad=18)
+ax.set_xlabel("Training Iteration (Episode)", fontsize=12, color=MUTED, labelpad=10)
+ax.set_ylabel("Average Episode Reward", fontsize=12, color=MUTED, labelpad=10)
+
+ax.set_xticks(iterations)
+ax.tick_params(colors=MUTED, labelsize=10)
+for spine in ax.spines.values():
+    spine.set_edgecolor(GRID)
+
+ax.grid(True, linestyle='--', alpha=0.35, color=GRID)
+ax.set_xlim(iterations[0] - 0.3, iterations[-1] + 0.3)
+
+plt.tight_layout()
+
+output_path = "learning_curve.png"
+plt.savefig(output_path, dpi=150, bbox_inches='tight', facecolor=fig.get_facecolor())
+plt.show()
+
+print(f"Saved to: {output_path}")
+
+import json
+
+with open(LOG_FILE) as f:
+    data = json.load(f)
+
+for d in data:
+    ep = d['iteration'] + 1
+    reward = d['reward']
+    strategy = d['strategy']
+
+    print(f"\n{'='*65}")
+    print(f"  Episode {ep}  |  Avg Reward: {reward:.4f}")
+    print(f"{'='*65}")
+    # Word-wrap the strategy text at 65 chars
+    import textwrap
+    wrapped = textwrap.fill(strategy, width=63, initial_indent='  ', subsequent_indent='  ')
+    print(wrapped)
+
+import os
+
+# Check artifacts exist
+artifacts = [LOG_FILE, "learning_curve.png"]
+for f in artifacts:
+    if os.path.exists(f):
+        size = os.path.getsize(f)
+        print(f"  ✅ {f:30s} ({size:,} bytes)")
+    else:
+        print(f"  ❌ {f} — NOT FOUND")
+
+# Download in Colab
+try:
+    from google.colab import files
+    print("\nDownloading artifacts...")
+    for f in artifacts:
+        if os.path.exists(f):
+            files.download(f)
+    print("Download triggered. Check your browser downloads folder.")
+except ImportError:
+    print("\nNot running in Colab. Copy files manually from the working directory.")
+
+# Optional: Commit and push artifacts directly from Colab
+# Uncomment and fill in your credentials to enable auto-push
+
+# GITHUB_USERNAME = "your-username"
+# GITHUB_TOKEN    = "ghp_..."   # personal access token with repo write
+# GITHUB_REPO     = "contractenv"
+# COMMIT_MSG      = f"chore: add training artifacts from IPO run ({NUM_ITERATIONS} iterations)"
+#
+# !git config user.email "bot@colab.local"
+# !git config user.name  "Colab Training Bot"
+# !git add training_log.json learning_curve.png transcripts/
+# !git commit -m "{COMMIT_MSG}"
+# !git push https://{GITHUB_USERNAME}:{GITHUB_TOKEN}@github.com/{GITHUB_USERNAME}/{GITHUB_REPO}.git
+
+print("Git push cell is commented out. Uncomment and configure credentials to auto-push.")

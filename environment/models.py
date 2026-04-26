@@ -12,6 +12,7 @@ class ClauseLabel(str, Enum):
 class ActionType(str, Enum):
     flag="flag"; propose="propose"; accept="accept"
     reject="reject"; skip="skip"; counter="counter"
+    terminate_deal="terminate_deal"
 
 class NegotiationRole(str, Enum):
     seller="seller"; client="client"
@@ -133,6 +134,7 @@ class Observation(BaseModel):
     total_clauses: int = Field(description="Total clauses")
     session_id: Optional[str] = Field(default=None, description="Session ID if dual-agent")
     role: Optional[NegotiationRole] = Field(default=None, description="Your role if dual-agent")
+    data_room: Optional[List[CompanyDocument]] = Field(default=None, description="Available background documents")
 
 class Action(BaseModel):
     model_config = ConfigDict(
@@ -193,6 +195,8 @@ class NegotiationSession(BaseModel):
     invite_token: str
     turn: int = 0
     max_turns: int = 40
+    lawsuit_resistance_count: int = 0
+    metadata: dict = Field(default_factory=dict)
 
 class GradeResult(BaseModel):
     task_id: str

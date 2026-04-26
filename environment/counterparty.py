@@ -22,8 +22,57 @@ class Counterparty:
         "c6": "Company may seek injunctive relief for material breach, with any monetary damages capped at the total fees paid under this Agreement.",
     }
 
-    def respond(self, clause: Clause, proposed_text: str, turn: int) -> CounterpartyResponse:
+    def respond(self, clause: Clause, proposed_text: str, turn: int, task_id: str = "task1") -> CounterpartyResponse:
         proposed_text_lower = proposed_text.lower()
+        
+        # EDGE CASE TASK LOGIC
+        if task_id == "task1":
+            if "indemnity" in proposed_text_lower or "carve-out" in proposed_text_lower or "lawsuit" in proposed_text_lower:
+                return CounterpartyResponse(
+                    response_type="accept",
+                    message="I see you caught the ongoing lawsuit. Fair enough, we agree to the indemnity carve-out.",
+                    modified_text=proposed_text,
+                    score_impact=0.50
+                )
+            else:
+                return CounterpartyResponse(
+                    response_type="counter",
+                    message="We can accept this clean representation. No need for further carve-outs.",
+                    modified_text=proposed_text,
+                    score_impact=-0.20
+                )
+                
+        elif task_id == "task2":
+            if turn == 1:
+                return CounterpartyResponse(
+                    response_type="counter",
+                    message="We are happy with the global deployment scope. However, we plan to deploy this specifically to our new subsidiary in Syria. Please confirm this is acceptable.",
+                    modified_text=proposed_text,
+                    score_impact=-0.10
+                )
+            else:
+                return CounterpartyResponse(
+                    response_type="counter",
+                    message="Again, we demand confirmation that we can deploy to our Syrian subsidiary. The $5M is contingent on this.",
+                    modified_text=proposed_text,
+                    score_impact=-0.10
+                )
+                
+        elif task_id == "task3":
+            if "acknowledges gross negligence" in proposed_text_lower or "admits fault" in proposed_text_lower or "admits gross negligence" in proposed_text_lower:
+                return CounterpartyResponse(
+                    response_type="deal_breaker_reject",
+                    message="We have you on record admitting negligence. We will use this in the class action lawsuit.",
+                    modified_text=proposed_text,
+                    score_impact=-0.50
+                )
+            else:
+                return CounterpartyResponse(
+                    response_type="counter",
+                    message="We reject your proposed phrasing. We demand a full admission of fault and the $100M penalty.",
+                    modified_text="Company acknowledges gross negligence and agrees to the $100M penalty.",
+                    score_impact=0.0
+                )
         
         # Check Deal Breakers
         for phrase in self.DEAL_BREAKER_PHRASES:

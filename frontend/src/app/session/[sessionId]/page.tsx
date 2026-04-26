@@ -6,7 +6,7 @@ import { useNegotiationSocket } from '@/hooks/useNegotiationSocket'
 import { api } from '@/lib/api'
 import { InterventionModal } from '@/components/session/InterventionModal'
 import { NegotiationSession, NegotiationTurn, Clause } from '@/types'
-import { AlertTriangle, CheckCircle2, Clock, Pause, Play, FileText, Zap, Shield } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Clock, Pause, Play, FileText, Zap, Shield, Bomb } from 'lucide-react'
 import clsx from 'clsx'
 
 /* ── helpers ── */
@@ -61,7 +61,7 @@ function TurnBubble({ turn, isSeller }: { turn: NegotiationTurn, isSeller: boole
           'px-4 py-3 rounded-2xl shadow-sm text-sm leading-relaxed',
           isSpeakerSeller
             ? 'bg-pink-50 border border-pink-200 rounded-tl-sm text-slate-800'
-            : 'bg-slate-800 text-white rounded-tr-sm'
+            : 'bg-blue-50 border border-blue-200 text-slate-800 rounded-tr-sm'
         )}>
           <p>{turn.content}</p>
           {turn.proposed_text && (
@@ -69,7 +69,7 @@ function TurnBubble({ turn, isSeller }: { turn: NegotiationTurn, isSeller: boole
               'mt-3 border-l-4 pl-3 py-2 rounded-r-lg text-xs',
               isSpeakerSeller
                 ? 'bg-pink-100/60 border-pink-400 text-pink-900'
-                : 'bg-white/10 border-blue-300 text-blue-100'
+                : 'bg-blue-100/60 border-blue-400 text-blue-900'
             )}>
               <p className="text-[10px] font-bold uppercase tracking-wider mb-1 opacity-70">📝 Proposed Redline</p>
               <p className="italic leading-relaxed">&ldquo;{turn.proposed_text}&rdquo;</p>
@@ -84,7 +84,7 @@ function TurnBubble({ turn, isSeller }: { turn: NegotiationTurn, isSeller: boole
         </div>
       </div>
       {!isSpeakerSeller && (
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 text-white flex items-center justify-center font-bold text-sm shadow-md flex-shrink-0">
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-md flex-shrink-0">
           C
         </div>
       )}
@@ -97,9 +97,9 @@ function TypingDots({ speaker }: { speaker: string }) {
   return (
     <div className={clsx('flex gap-3 my-2', isSeller ? 'justify-start' : 'justify-end')}>
       {isSeller && <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex-shrink-0" />}
-      <div className={clsx('px-4 py-3 rounded-2xl flex items-center gap-1.5', isSeller ? 'bg-pink-50 border border-pink-200' : 'bg-slate-800')}>
+      <div className={clsx('px-4 py-3 rounded-2xl flex items-center gap-1.5', isSeller ? 'bg-pink-50 border border-pink-200' : 'bg-blue-50 border border-blue-200')}>
         {[0, 1, 2].map(i => (
-          <span key={i} className={clsx('w-2 h-2 rounded-full', isSeller ? 'bg-pink-400' : 'bg-slate-400')}
+          <span key={i} className={clsx('w-2 h-2 rounded-full', isSeller ? 'bg-pink-400' : 'bg-blue-400')}
             style={{ animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite` }} />
         ))}
       </div>
@@ -113,22 +113,37 @@ export default function SessionRoom({ params }: { params: { sessionId: string } 
   const router = useRouter()
   const searchParams = useSearchParams()
   const role = (searchParams.get('role') as 'seller' | 'client') || 'seller'
+  const taskId = searchParams.get('task') || 'task1'
+  const syriaEnabled = searchParams.get('syria') === '1'
 
   const { turns, isConnected, isComplete } = useNegotiationSocket(params.sessionId, role)
   const [sessionData, setSessionData] = useState<NegotiationSession | null>(null)
   const [activeClauseId, setActiveClauseId] = useState<string>('c2')
   const [showIntervention, setShowIntervention] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
+  const [evidenceBombUsed, setEvidenceBombUsed] = useState(false)
+  const [evidenceBombLoading, setEvidenceBombLoading] = useState(false)
   const chatBottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    api.session.status(params.sessionId, undefined, role).then(res => {
-      setSessionData(res.data)
-      const clauses = res.data.clauses || []
-      if (clauses.length > 0) setActiveClauseId(clauses[0].id)
-      if (res.data.status === 'paused') setIsPaused(true)
-    })
-  }, [params.sessionId])
+    const fetchStatus = async () => {
+      try {
+        const res = await api.session.status(params.sessionId, undefined, role)
+        setSessionData(res.data)
+        if (res.data.status === 'paused') setIsPaused(true)
+        else setIsPaused(false)
+        
+        const clauses = res.data.clauses || []
+        if (clauses.length > 0 && !activeClauseId) setActiveClauseId(clauses[0].id)
+      } catch (err) {
+        console.error("Status poll failed", err)
+      }
+    }
+
+    fetchStatus()
+    const interval = setInterval(fetchStatus, 5000)
+    return () => clearInterval(interval)
+  }, [params.sessionId, role])
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -170,6 +185,21 @@ export default function SessionRoom({ params }: { params: { sessionId: string } 
     setShowIntervention(false)
   }
 
+  // Evidence Bomb — Master session with bomb wildcard enabled, for client only, when agreement rate < 50%
+  const evidenceBombEnabled = searchParams.get('bomb') === '1'
+  const canUseEvidenceBomb = role === 'client' && taskId === 'master' && evidenceBombEnabled && !evidenceBombUsed
+  const handleEvidenceBomb = async () => {
+    setEvidenceBombLoading(true)
+    try {
+      await fetch(`http://localhost:7860/session/${params.sessionId}/evidence-bomb`, { method: 'POST' })
+      setEvidenceBombUsed(true)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setEvidenceBombLoading(false)
+    }
+  }
+
   if (!sessionData) {
     return (
       <div className="h-screen bg-gradient-to-br from-pink-50 to-rose-50 flex items-center justify-center">
@@ -195,6 +225,25 @@ export default function SessionRoom({ params }: { params: { sessionId: string } 
           className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-emerald-200 hover:scale-[1.02] transition-all"
         >
           Review & Sign Final Contract →
+        </button>
+      </div>
+    )
+  }
+
+  if (sessionData.status === 'failed') {
+    return (
+      <div className="h-screen bg-gradient-to-br from-red-50 to-rose-50 flex flex-col items-center justify-center p-8 text-center">
+        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+          <span className="text-4xl">🚫</span>
+        </div>
+        <h1 className="font-bold text-4xl text-slate-800 mb-3">Negotiation Terminated</h1>
+        <p className="text-slate-500 mb-2 text-lg">The deal has collapsed.</p>
+        <p className="text-slate-400 mb-8 max-w-md">One of the agents triggered a deal-breaker constraint and terminated the negotiations. The session is closed.</p>
+        <button
+          onClick={() => router.push(`/`)}
+          className="bg-gradient-to-r from-slate-500 to-slate-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-slate-200 hover:scale-[1.02] transition-all"
+        >
+          Return Home
         </button>
       </div>
     )
@@ -311,7 +360,7 @@ export default function SessionRoom({ params }: { params: { sessionId: string } 
           </div>
 
           {/* Intervene button */}
-          <div className="px-3 py-3 border-t border-slate-100">
+          <div className="px-3 py-3 border-t border-slate-100 space-y-2">
             <button
               onClick={() => setShowIntervention(true)}
               className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2.5 rounded-xl font-semibold text-sm hover:from-amber-600 hover:to-orange-600 transition-all shadow-md"
@@ -321,6 +370,23 @@ export default function SessionRoom({ params }: { params: { sessionId: string } 
                 : <><AlertTriangle className="w-4 h-4" /> Human Intervene</>
               }
             </button>
+
+            {/* Evidence Bomb — Task 3 client only when losing */}
+            {role === 'client' && taskId === 'task3' && (
+              <button
+                onClick={handleEvidenceBomb}
+                disabled={!canUseEvidenceBomb || evidenceBombLoading}
+                className={clsx(
+                  'w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all shadow-md',
+                  canUseEvidenceBomb
+                    ? 'bg-gradient-to-r from-red-600 to-rose-700 text-white hover:from-red-700 hover:to-rose-800 animate-pulse'
+                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                )}
+              >
+                <Bomb className="w-4 h-4" />
+                {evidenceBombUsed ? 'Evidence Released ✓' : canUseEvidenceBomb ? '💣 Release Evidence Bomb' : 'Evidence Bomb (score ≥50%)'}
+              </button>
+            )}
           </div>
         </div>
 

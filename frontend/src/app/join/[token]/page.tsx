@@ -1,150 +1,209 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { ProgressSteps } from '@/components/ui/ProgressSteps'
 import { Button } from '@/components/ui/Button'
-import { ConstraintBuilder } from '@/components/negotiation/ConstraintBuilder'
-import { ConstraintList } from '@/components/negotiation/ConstraintList'
 import { api } from '@/lib/api'
-import { PrivateConstraint } from '@/types'
-import { LiveBadge } from '@/components/ui/LiveBadge'
+import { Check, Shield, AlertTriangle, Globe, Bomb, Eye } from 'lucide-react'
+import clsx from 'clsx'
 
-export default function ClientJoin({ params }: { params: { token: string } }) {
+export default function JoinSetup() {
+  const params = useParams()
+  const searchParams = useSearchParams()
   const router = useRouter()
   const [step, setStep] = useState(0)
-  
+
   const [companyName, setCompanyName] = useState('')
-  const [companyContext, setCompanyContext] = useState('')
-  const [constraints, setConstraints] = useState<PrivateConstraint[]>([])
-  const [agentStyle, setAgentStyle] = useState<'balanced'|'aggressive'|'cooperative'>('balanced')
-  
-  const [sessionInfo, setSessionInfo] = useState<any>(null)
+  const [agentStyle, setAgentStyle] = useState<'balanced' | 'aggressive' | 'cooperative'>('balanced')
+  const [constraints, setConstraints] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [sessionData, setSessionData] = useState<any>(null)
+  const [sessionId, setSessionId] = useState<string>('')
+
+  // Wildcards are passed via URL from the invite or fetched from session
+  const lawsuitHidden = searchParams.get('lawsuit') === '1'
+  const syriaTrap = searchParams.get('syria') === '1'
+  const evidenceBomb = searchParams.get('bomb') === '1'
 
   useEffect(() => {
-    api.session.status(undefined, params.token).then(res => {
-      setSessionInfo(res.data)
-    }).catch(err => {
-      setError("Invalid or expired invite link.")
+    // Fetch combined constraints for client
+    const p = new URLSearchParams({
+      role: 'client',
+      lawsuit_hidden: lawsuitHidden.toString(),
+      syria_deployment: syriaTrap.toString(),
+      evidence_bomb: evidenceBomb.toString()
     })
-  }, [params.token])
+    fetch(`http://localhost:7860/tasks/master/constraints?${p.toString()}`)
+      .then(r => r.json())
+      .then(data => setConstraints(data.constraints || []))
+      .catch(() => setConstraints([]))
+  }, [lawsuitHidden, syriaTrap, evidenceBomb])
 
   const handleJoin = async () => {
     setLoading(true)
     try {
-      await api.session.join({
-        invite_token: params.token,
+      const { data } = await api.session.join({
+        invite_token: params.token as string,
         client_company_name: companyName,
         client_constraints: constraints,
         client_agent_style: agentStyle,
-        client_context: companyContext
+        client_context: `Client mission for Strategic Deal.`,
       })
-      setStep(1)
-      
-      // now poll for session start
-      const interval = setInterval(async () => {
-        try {
-          const { data } = await api.session.status(undefined, params.token)
-          if (data.status === 'negotiating') {
-            clearInterval(interval)
-            router.push(`/session/${data.session_id}?role=client`)
-          }
-        } catch(e) {}
-      }, 3000)
-    } catch(e) {
+      setSessionId(data.session_id)
+      setStep(2)
+    } catch (e) {
       console.error(e)
     } finally {
       setLoading(false)
     }
   }
 
-  if (error) {
-    return <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-2xl border text-charcoal border-red-200 text-center text-red-500 font-medium">
-        {error}
-      </div>
-    </div>
+  const handleEnterSession = () => {
+    // Redirect to session page with same flags
+    const q = new URLSearchParams({
+      role: 'client',
+      task: 'master',
+      lawsuit: lawsuitHidden ? '1' : '0',
+      syria: syriaTrap ? '1' : '0',
+      bomb: evidenceBomb ? '1' : '0'
+    })
+    // Note: session_id is needed here, we might need to fetch it via token
+    // For now, let's assume api.session.join handles the backend state.
+    // We'll need the sessionId.
+    router.push(`/session/${sessionId}?${q.toString()}`)
   }
 
-  if (!sessionInfo) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-pink-400 border-t-transparent animate-spin rounded-full"/></div>
-
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-slate-50">
       <Navbar />
-      
       <main className="flex-1 py-12 px-4 max-w-4xl mx-auto w-full">
-        <ProgressSteps steps={['Set Constraints', 'Wait for Start']} currentStep={step} />
-        
+        <ProgressSteps steps={['Briefing', 'Agent Strategy', 'Entering Deal']} currentStep={step} />
+
         {step === 0 && (
           <div className="space-y-6">
-            <div className="bg-white border text-charcoal border-pink-200 rounded-2xl p-8 shadow-sm text-center">
-              <h2 className="font-display font-medium text-xl text-slate mb-1">
-                You've been invited to negotiate:
-              </h2>
-              <p className="font-display font-bold text-3xl text-charcoal">
-                {sessionInfo.contract_title}
-              </p>
-              <p className="text-pink-500 font-medium mt-2">by {sessionInfo.seller_config?.company_name}</p>
-            </div>
+            <div className="bg-white border border-pink-200 rounded-3xl p-8 shadow-sm">
+              <h2 className="font-display font-bold text-2xl text-charcoal mb-4">Strategic Acquisition Briefing</h2>
+              <div className="p-4 bg-pink-50 rounded-2xl border border-pink-100 mb-6">
+                <p className="text-pink-800 text-sm leading-relaxed">
+                  You are the Buyer/Client. You are negotiating a high-stakes acquisition and enterprise licensing deal.
+                  The Seller has enabled specific <strong>High-Stakes Wildcards</strong> for this session.
+                </p>
+              </div>
 
-            <div className="bg-white border border-pink-200 rounded-2xl p-8 shadow-sm">
-              <h2 className="font-display text-charcoal font-bold text-2xl mb-6">Your Private Rules</h2>
-              
-              <div className="mb-8 space-y-5">
+              <div className="grid md:grid-cols-3 gap-3 mb-6">
+                {lawsuitHidden && (
+                  <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Eye className="w-3.5 h-3.5 text-rose-500" />
+                      <span className="font-bold text-[10px] text-rose-700 uppercase">Hidden Lawsuit</span>
+                    </div>
+                    <p className="text-[10px] text-rose-600 leading-tight">Seller may have buried liabilities. Check Data Room.</p>
+                  </div>
+                )}
+                {syriaTrap && (
+                  <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Globe className="w-3.5 h-3.5 text-amber-500" />
+                      <span className="font-bold text-[10px] text-amber-700 uppercase">Syria Reveal</span>
+                    </div>
+                    <p className="text-[10px] text-amber-600 leading-tight">You plan to deploy to Syria. Reveal at Turn 2.</p>
+                  </div>
+                )}
+                {evidenceBomb && (
+                  <div className="p-3 bg-orange-50 border border-orange-100 rounded-xl">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Bomb className="w-3.5 h-3.5 text-orange-500" />
+                      <span className="font-bold text-[10px] text-orange-700 uppercase">Evidence Bomb</span>
+                    </div>
+                    <p className="text-[10px] text-orange-600 leading-tight">You can release forensic logs if agreement stalls.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate mb-2">Your Company Name</label>
-                  <input value={companyName} onChange={e=>setCompanyName(e.target.value)} placeholder="Startup Inc" className="w-full bg-pink-50 border border-pink-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-400 text-charcoal" />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-semibold text-slate mb-2">Company Context / Background Document (Optional)</label>
-                  <textarea 
-                    value={companyContext} 
-                    onChange={e=>setCompanyContext(e.target.value)} 
-                    placeholder="Paste internal notes describing your primary objectives, priorities, and what this company does..." 
-                    className="w-full bg-pink-50 border border-pink-200 text-charcoal rounded-xl px-4 py-3 h-24 resize-none focus:outline-none focus:ring-2 focus:ring-pink-400"
+                  <label className="block text-sm font-semibold text-slate mb-2">Your Company Name (Buyer)</label>
+                  <input
+                    value={companyName}
+                    onChange={e => setCompanyName(e.target.value)}
+                    placeholder="e.g. MetaGlobal Industries"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-pink-400 text-charcoal"
                   />
                 </div>
               </div>
-              
-              <ConstraintBuilder onAdd={c => setConstraints([...constraints, c])} />
-              
-              <div className="mt-8 border-t border-pink-100 pt-8">
-                <h3 className="font-semibold text-slate mb-4">Your Added Constraints</h3>
-                <ConstraintList constraints={constraints} onRemove={id => setConstraints(constraints.filter(c=>c.constraint_id !== id))} />
-              </div>
+            </div>
 
-              <div className="mt-8 border-t border-pink-100 pt-8">
-                <h3 className="font-semibold text-slate mb-4">Agent Style</h3>
-                <div className="flex gap-4">
-                  {['aggressive', 'balanced', 'cooperative'].map(style => (
-                    <button 
-                      key={style}
-                      onClick={() => setAgentStyle(style as any)}
-                      className={`flex-1 py-3 rounded-xl border-2 font-medium capitalize transition-colors ${agentStyle === style ? 'border-pink-400 bg-pink-50 text-pink-600' : 'border-pink-100 text-slate hover:border-pink-200'}`}
-                    >
-                      {style}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="pt-8 flex justify-end">
-                <Button onClick={handleJoin} disabled={!companyName} isLoading={loading}>Join & Ready &rarr;</Button>
-              </div>
+            <div className="pt-2 flex justify-end">
+              <Button onClick={() => setStep(1)} disabled={!companyName}>Configure Agent Style →</Button>
             </div>
           </div>
         )}
 
         {step === 1 && (
-          <div className="bg-white border border-pink-200 rounded-2xl p-8 shadow-sm text-center text-charcoal flex flex-col items-center max-w-md mx-auto">
-            <LiveBadge className="mb-6" />
-            <h2 className="font-display font-bold text-2xl mb-2">Ready to negotiate</h2>
-            <p className="text-slate">Waiting for {sessionInfo.seller_config?.company_name} to start the session. You will be redirected automatically.</p>
+          <div className="bg-white border border-pink-200 rounded-3xl p-8 shadow-sm space-y-8">
+            <div>
+              <h2 className="font-display font-bold text-2xl text-charcoal mb-1">Agent Strategy</h2>
+              <p className="text-sm text-slate-500">Align your AI agent with your acquisition goals.</p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-slate mb-3 text-sm">Negotiation Temperament</h3>
+              <div className="flex gap-3">
+                {(['aggressive', 'balanced', 'cooperative'] as const).map(style => (
+                  <button
+                    key={style}
+                    onClick={() => setAgentStyle(style)}
+                    className={clsx(
+                      'flex-1 py-3 rounded-xl border-2 font-medium capitalize transition-colors text-xs',
+                      agentStyle === style
+                        ? 'border-pink-400 bg-pink-50 text-pink-600 shadow-sm'
+                        : 'border-slate-100 text-slate hover:border-pink-200'
+                    )}
+                  >
+                    {style}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Shield className="w-4 h-4 text-pink-400" />
+                <h3 className="font-semibold text-slate text-sm">Active Directives</h3>
+              </div>
+              <div className="space-y-2">
+                {constraints.map((c: any, i: number) => (
+                  <div key={i} className={clsx(
+                    'flex items-start gap-3 p-3 rounded-xl border text-[11px]',
+                    c.is_deal_breaker ? 'bg-red-50 border-red-100 text-red-800' : 'bg-slate-50 border-slate-100 text-slate-700'
+                  )}>
+                    {c.is_deal_breaker ? <AlertTriangle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" /> : <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />}
+                    <span>{c.description}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-between pt-2">
+              <Button variant="outline" onClick={() => setStep(0)}>Back</Button>
+              <Button onClick={handleJoin} isLoading={loading}>Join Negotiation →</Button>
+            </div>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="bg-white border border-pink-200 rounded-3xl p-10 shadow-sm text-center max-w-sm mx-auto">
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+              <Check className="w-8 h-8" />
+            </div>
+            <h2 className="font-display font-bold text-2xl mb-2 text-charcoal">All Set!</h2>
+            <p className="text-slate text-sm mb-8">The Seller has been notified. You are now entering the boardroom.</p>
+            <Button onClick={handleEnterSession} className="w-full">
+              Enter Deal Room →
+            </Button>
           </div>
         )}
       </main>

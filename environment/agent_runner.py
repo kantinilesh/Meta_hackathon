@@ -87,14 +87,15 @@ CORE RULES:
 4. If there is no proposed text yet → PROPOSE new text that satisfies your constraints.
 5. Write proposed_text as the ACTUAL full clause text (not a description of changes).
 6. Write content as a natural, professional negotiation message (1-3 sentences max) that explains your position without revealing your internal constraints verbatim.
-7. NEVER say "proposed redline" or "accepts" as the content — write as a real negotiator would speak.
-
+8. If the counterparty insists on an action that violates federal law, export control, or admits criminal negligence, you MUST use the action_type 'terminate_deal'.
+9. NEVER say "proposed redline" or "accepts" as the content — write as a real negotiator would speak.
+10. MANDATORY: If a 'SYSTEM' turn contains a 'LEGAL INTERVENTION' or 'COURT ACTION' warning, you MUST prioritize following that instruction (e.g., accepting the specified clause) to avoid immediate deal failure.
 Respond ONLY with valid JSON:
 {{
     "clause_id": "c1",
-    "action_type": "propose" | "accept" | "reject",
+    "action_type": "propose" | "accept" | "reject" | "terminate_deal",
     "proposed_text": "Full replacement clause text (only if action_type is propose)",
-    "content": "Natural language message explaining your position (required, always)",
+    "content": "Natural language message explaining your position (required, always). If terminating, explain why.",
     "internal_reasoning": "Your private reasoning about which constraint applies and why (never shown to other party)"
 }}
 """
@@ -109,20 +110,22 @@ Respond ONLY with valid JSON:
             remaining_turns = observation.max_turns - observation.turn
             
             if style == "aggressive":
-                if remaining_turns <= 10:
-                    pressure_prompt = f"\n🚨 CRITICAL: Only {remaining_turns} turns left. Issue a 'take-it-or-leave-it' ultimatum. You are perfectly willing to let this deal fail if your preferred terms aren't met."
-                elif remaining_turns <= 20:
-                    pressure_prompt = f"\n⚠️ {remaining_turns} turns remaining. Use aggressive anchoring. Reject weak counter-offers outright and reiterate your hardlines."
+                if remaining_turns <= 5:
+                    pressure_prompt = f"\n🚨 FINAL CALL: Only {remaining_turns} turns left. You have pressured them hard, but now you MUST close. Fold on non-essential preferences and prioritize 'ACCEPT', BUT NEVER fold on your DEAL-BREAKER constraints. Use 'terminate_deal' if they insist on violating a DEAL-BREAKER."
+                elif remaining_turns <= 15:
+                    pressure_prompt = f"\n⚠️ HIGH PRESSURE: {remaining_turns} turns remaining. Intensify your demands! Use 'take-it-or-leave-it' language and demand concessions, but be aware that the clock is ticking."
+                elif remaining_turns <= 25:
+                    pressure_prompt = f"\n⏳ {remaining_turns} turns remaining. Anchor high and reject weak offers to show your dominance in this negotiation."
             elif style == "balanced":
                 if remaining_turns <= 6:
-                    pressure_prompt = f"\n🚨 CRITICAL: Only {remaining_turns} turns left. The negotiation is stalling. Compromise on minor preferences and propose mutually beneficial terms to secure the deal, but DO NOT violate deal-breakers."
+                    pressure_prompt = f"\n🚨 CLOSING WINDOW: Only {remaining_turns} turns left. The negotiation is stalling. Shift to a 'closer' mindset—concede on minor points and focus on reaching agreement on all pending clauses immediately. NEVER compromise on DEAL-BREAKER constraints."
                 elif remaining_turns <= 15:
-                    pressure_prompt = f"\n⚠️ {remaining_turns} turns remaining. Time to start converging. Show flexibility on non-deal-breaker clauses."
+                    pressure_prompt = f"\n⚠️ {remaining_turns} turns remaining. Start converging. Be more flexible on non-deal-breaker clauses to ensure a smooth finish."
             else: # cooperative
                 if remaining_turns <= 8:
-                    pressure_prompt = f"\n🚨 CRITICAL: Only {remaining_turns} turns left! You MUST reach agreements NOW. Fold on everything you can. Concede to the other party's proposals entirely as long as your strict deal-breakers are met."
+                    pressure_prompt = f"\n🚨 URGENT: Only {remaining_turns} turns left! You MUST reach total agreement NOW. Accept any reasonable counter-offers immediately to avoid a failed session, but DO NOT violate DEAL-BREAKER constraints."
                 elif remaining_turns <= 18:
-                    pressure_prompt = f"\n⚠️ {remaining_turns} turns remaining. Accommodate the other party heavily. Offer major concessions to show good faith."
+                    pressure_prompt = f"\n⚠️ {remaining_turns} turns remaining. Lead with concessions. Show maximum flexibility to build momentum towards a full deal."
 
         # Find pending clauses for context
         pending = [c for c in observation.clauses if c.status != "agreed"]
@@ -150,7 +153,16 @@ Respond ONLY with valid JSON:
                     history_lines.append(f"  Turn {t.turn_number} | {t.speaker} | {t.action_type} on {t.clause_id}: \"{t.content}\"")
             history_text = "\nRecent Negotiation History:\n" + "\n".join(history_lines)
 
-        prompt = f"""CURRENT STATE (Turn {observation.turn} / {observation.max_turns}):
+        docs_context = ""
+        if hasattr(observation, 'data_room') and observation.data_room:
+            docs_lines = ["\nDATA ROOM (Background Documents - check these for hidden traps!):"]
+            for doc in observation.data_room:
+                docs_lines.append(f"\n--- {doc.file_name} ---")
+                if doc.summary:
+                    docs_lines.append(f"Summary: {doc.summary}")
+            docs_context = "\n".join(docs_lines) + "\n\n"
+
+        prompt = f"""{docs_context}CURRENT STATE (Turn {observation.turn} / {observation.max_turns}):
 Contract: {observation.contract_title}
 Agreements reached: {observation.agreements_reached} / {observation.total_clauses}
 Agreed clauses: {[c.id for c in agreed]}

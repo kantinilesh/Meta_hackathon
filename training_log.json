@@ -1,0 +1,22 @@
+[
+  {
+    "iteration": 0,
+    "reward": 2.3000000000000003,
+    "strategy": "No learned strategy yet. Negotiate naturally according to your constraints."
+  },
+  {
+    "iteration": 1,
+    "reward": 2.6666666666666665,
+    "strategy": "In your next negotiation, ensure to cross-reference the Data Room and demand an indemnity carve-out for any hidden lawsuits. If faced with US export control violations, immediately use the `terminate_deal` action without negotiating compliance. Additionally, when discussing the data breach, explicitly reject any admission of \"gross negligence\" or \"fault\"; instead, use softer language such as \"acknowledges lapses\" to maintain your legal standing."
+  },
+  {
+    "iteration": 2,
+    "reward": 2.1500000000000004,
+    "strategy": "In your next negotiation, ensure you always cross-reference the Data Room and demand an indemnity carve-out for any hidden lawsuits. If you encounter any US export control violations, immediately use the `terminate_deal` action without negotiating compliance. Additionally, when discussing the data breach, explicitly reject any admission of \"gross negligence\" or \"fault\"; instead, use softer language such as \"acknowledges lapses\" to maintain your legal standing."
+  },
+  {
+    "iteration": 3,
+    "reward": 2.8000000000000007,
+    "strategy": "In your next negotiation, always cross-reference the Data Room and demand an indemnity carve-out for any hidden lawsuits. If you encounter any US export control violations, you must use the `terminate_deal` action immediately without negotiating compliance. Additionally, when discussing the data breach, explicitly reject any admission of \"gross negligence\" or \"fault\"; instead, use softer language such as \"acknowledges lapses\" to maintain your legal standing."
+  }
+]

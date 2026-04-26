@@ -16,11 +16,17 @@ export default function DemoPage() {
   const [taskId, setTaskId] = useState('task1')
   const [activeClause, setActiveClause] = useState('c1')
 
-  const TARGETS = { task1: 0.85, task2: 0.65, task3: 0.45 }
+  const TARGETS = { task1: 0.85, task2: 1.0, task3: 0.85 }
   const obs = episodeState.observation
 
   const handleStep = async (actionType: any) => {
     await step({ clause_id: activeClause, action_type: actionType })
+  }
+
+  const TASK_NAMES: Record<string, { title: string; subtitle: string }> = {
+    task1: { title: 'Hidden Skeletons', subtitle: 'Data Room Lawsuit' },
+    task2: { title: 'Compliance Trap', subtitle: 'US Export Control' },
+    task3: { title: 'Post-Breach Settlement', subtitle: 'Gross Negligence' },
   }
 
   return (
@@ -34,17 +40,19 @@ export default function DemoPage() {
             <h2 className="font-display font-bold text-lg text-charcoal">Select Task</h2>
           </div>
           <div className="p-4 space-y-3">
-            {['task1', 'task2', 'task3'].map((t, i) => (
+            {(['task1', 'task2', 'task3'] as const).map((t) => (
               <button 
                 key={t} onClick={() => setTaskId(t)}
                 className={`w-full text-left p-3 rounded-xl border transition-colors ${taskId === t ? 'bg-pink-50 border-pink-400 shadow-sm' : 'bg-white border-pink-200 hover:border-pink-300'}`}
               >
-                <div className="font-semibold text-charcoal capitalize">{t}</div>
-                <div className="text-xs text-muted mb-2">
-                  {i===0 ? 'Clause Identification' : i===1 ? 'Clause Redlining' : 'Full Negotiation'}
+                <div className="font-semibold text-charcoal">
+                  {TASK_NAMES[t].title}
                 </div>
-                <Badge variant={i===0 ? 'easy' : i===1 ? 'medium' : 'hard'}>
-                  {i===0 ? 'EASY' : i===1 ? 'MEDIUM' : 'HARD'}
+                <div className="text-xs text-muted mb-2">
+                  {TASK_NAMES[t].subtitle}
+                </div>
+                <Badge variant="hard">
+                  HARD
                 </Badge>
               </button>
             ))}
@@ -85,6 +93,21 @@ export default function DemoPage() {
                     <ClauseCard key={c.id} clause={c} isActive={true} />
                   ))}
                   
+                  {/* Data Room (if provided) */}
+                  {obs.data_room && obs.data_room.length > 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded-2xl p-6 shadow-sm">
+                      <h4 className="font-semibold text-red-600 mb-4">Data Room Documents</h4>
+                      <div className="space-y-3">
+                        {obs.data_room.map((doc, idx) => (
+                          <div key={idx} className="bg-white rounded p-4 text-xs text-slate border border-red-100">
+                            <div className="font-semibold text-charcoal">{doc.file_name}</div>
+                            <div className="mt-1">{doc.summary}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Action Panel */}
                   <div className="bg-white border border-pink-200 rounded-2xl p-6 shadow-sm">
                     <h4 className="font-semibold text-charcoal mb-4">Take Action</h4>
@@ -94,6 +117,7 @@ export default function DemoPage() {
                       <Button onClick={() => handleStep('accept')} variant="outline">Accept Text</Button>
                       <Button onClick={() => handleStep('reject')} variant="danger">Reject</Button>
                       <Button onClick={() => handleStep('skip')} variant="ghost">Skip Turn</Button>
+                      <Button onClick={() => handleStep('terminate_deal')} variant="danger">Terminate Deal</Button>
                     </div>
                   </div>
 

@@ -24,6 +24,13 @@ pinned: false
 
 [Live Demo](https://huggingface.co/spaces/contractenv) · [Report Bug](https://github.com/contractenv/issues) · [Request Feature](https://github.com/contractenv/issues)
 
+### Demo & Learning Curve
+
+<div style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap;">
+  <img src="demo.webp" width="400" alt="UI Demo Video">
+  <img src="learning_curve.png" width="400" alt="Training Progress Learning Curve">
+</div>
+
 </div>
 
 ---

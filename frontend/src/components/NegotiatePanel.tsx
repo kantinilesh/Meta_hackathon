@@ -16,7 +16,7 @@ interface NegotiatePanelProps {
   taskId: string
 }
 
-const ACTION_TYPES: ActionType[] = ['flag', 'propose', 'accept', 'reject']
+const ACTION_TYPES: ActionType[] = ['flag', 'propose', 'accept', 'reject', 'terminate_deal']
 const LABELS: ClauseLabel[] = ['fair', 'unfair', 'neutral']
 const REASONS = ['scope', 'duration', 'ip', 'liability', 'jurisdiction', 'payment', 'termination']
 
@@ -79,6 +79,21 @@ export default function NegotiatePanel({
             {observation.contract_text}
           </div>
         </div>
+
+        {/* Data Room (if provided) */}
+        {observation.data_room && observation.data_room.length > 0 && (
+          <div className="bg-red-500/10 rounded-lg border border-red-500/20 p-4">
+            <h2 className="text-sm font-semibold text-red-400">Data Room</h2>
+            <div className="mt-2 space-y-2">
+              {observation.data_room.map((doc, idx) => (
+                <div key={idx} className="bg-surface rounded p-2 text-xs text-text-secondary border border-border">
+                  <div className="font-semibold text-text-primary">{doc.file_name}</div>
+                  <div className="mt-1 font-mono whitespace-pre-wrap">{doc.summary}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Clause list */}
         <div className="space-y-2">
@@ -177,11 +192,12 @@ export default function NegotiatePanel({
                     className={clsx(
                       'px-2 py-1.5 rounded text-xs font-medium transition-colors capitalize',
                       actionType === at
-                        ? 'bg-accent text-white'
-                        : 'bg-surface text-text-secondary hover:text-text-primary'
+                        ? at === 'terminate_deal' ? 'bg-red-500 text-white' : 'bg-accent text-white'
+                        : 'bg-surface text-text-secondary hover:text-text-primary',
+                      at === 'terminate_deal' ? 'col-span-4' : ''
                     )}
                   >
-                    {at}
+                    {at.replace('_', ' ')}
                   </button>
                 ))}
               </div>
@@ -241,10 +257,10 @@ export default function NegotiatePanel({
               </div>
             )}
 
-            {(actionType === 'accept' || actionType === 'reject') && (
+            {(actionType === 'accept' || actionType === 'reject' || actionType === 'terminate_deal') && (
               <div className="bg-surface rounded p-3">
                 <p className="text-xs text-text-secondary">
-                  {actionType === 'accept' ? '✓ Accept' : '✗ Reject'} the current terms for{' '}
+                  {actionType === 'accept' ? '✓ Accept' : actionType === 'reject' ? '✗ Reject' : '🚫 Terminate Deal'} the current terms for{' '}
                   <span className="text-text-primary font-medium">{selectedClause.title}</span>
                 </p>
               </div>

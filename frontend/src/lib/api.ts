@@ -56,6 +56,7 @@ export const api = {
     resume: (sessionId: string) => client.post('/session/resume', { session_id: sessionId }),
   },
   sessions: {
+    full: (sessionId: string) => client.get(`/sessions/${sessionId}/full`),
     recent: (limit: number = 10) => client.get('/sessions/recent', { params: { limit } }),
   },
   leaderboard: {
